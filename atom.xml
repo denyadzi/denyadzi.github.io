@@ -4,7 +4,7 @@
   <title><![CDATA[Blog on embedded programming]]></title>
   <link href="http://denyadzi.github.io/atom.xml" rel="self"/>
   <link href="http://denyadzi.github.io/"/>
-  <updated>2014-12-25T11:31:37+03:00</updated>
+  <updated>2014-12-25T21:14:54+03:00</updated>
   <id>http://denyadzi.github.io/</id>
   <author>
     <name><![CDATA[Dzianis Yatskevich]]></name>
@@ -12,6 +12,292 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Assembly Hello World Code for Stm32f4discovery]]></title>
+    <link href="http://denyadzi.github.io/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery/"/>
+    <updated>2014-12-25T14:22:40+03:00</updated>
+    <id>http://denyadzi.github.io/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery</id>
+    <content type="html"><![CDATA[<p>Hello everyone! First of all: why use assembly language? In my opinion one should remove any kind of intermediary to know something well - remove anything that can be removed and examine the target directly. When programing for PC it&rsquo;s common not to think what processor is going to execute the code. We don&rsquo;t think about the amount of bytes that are generated for the execution. I&rsquo;m talking just about the corresponing level of abstraction - tools should correspond to the task.</p>
+
+<p>The task for this post is:</p>
+
+<ul>
+<li>to realize the stm32f4 memory layout</li>
+<li>to know what&rsquo;s going on after microcontroller (or MC) is powered up</li>
+<li>to get familiar with stm32f4 IO port with writing basic blinking program</li>
+</ul>
+
+
+<!--more-->
+
+
+<p>Knowing how to work with IO port gives you already a real possibility to create a variaty of MC applications. So, lets begin.</p>
+
+<h2>Memory layout and linker script</h2>
+
+<p>After the code is compiled and assembled the linkage stage comes on. When code is broken into several source files the assebmling gives several so called object files - these are input files for the linker and it&rsquo;s output is a single object file or an executable.</p>
+
+<p>All input files have, for example, code and data segments. The output file also should then have both of them, contaning the summary of all input data and code segments respectively - all input data segments concatenate into one output data segment and so on. That&rsquo;s one of the linker tasks. It&rsquo;s one more task is to decide where to place each segment within the executable and to manage segments&#8217; addresses. In other words linker&rsquo;s task is a complecated one and there&rsquo;s no need to dig deeper right now.</p>
+
+<p>Stm32f4 memory map can be found in it&rsquo;s datasheet which is available on ST site (<a href="http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/DM00037051.pdf">direct link</a>, page 69). That is the description of virtual address space - just the way of abstraction above all the peripherals inside MC. This address space is used by the core to deal with everything around it in one manner.</p>
+
+<p>From memory map we can see where flash memory and SRAM memory are located. Their address boundaries are exactly what we need now. We need to provide the linker a possibility to manage addresses within our executable and to place segments into right places. The way to do that is to create a linker script. Linker has the default one which can be viewed in a such way:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>arm-none-eabi-ld --verbose
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It&rsquo;s huge ) And it won&rsquo;t help us. We need the new one for our MC. And it will be much simpler. <a href="https://sourceware.org/binutils/docs/ld/Scripts.html#Scripts">Ld documentation on scripts</a> is VERY useful reading to understand object files and linker scripting, so please refer to the doc and let me be less verbose).</p>
+
+<p>Here is the script:</p>
+
+<figure class='code'><figcaption><span> (basic.ld)</span> <a href='http://denyadzi.github.io/public/code/hello_asm/basic.ld'>download</a></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">INCLUDE</span> <span class="n">stm32f407</span><span class="p">.</span><span class="n">memory</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">ENTRY</span><span class="p">(</span><span class="n">_reset</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">SECTIONS</span> <span class="p">{</span>
+</span><span class='line'>  <span class="p">.</span><span class="nl">int_vector_table</span> <span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="o">*</span><span class="p">(.</span><span class="n">int_vector_table</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span> <span class="o">&gt;</span> <span class="n">REGION_INT_VECTORS</span>
+</span><span class='line'>  <span class="p">.</span><span class="nl">text</span> <span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="o">*</span><span class="p">(.</span><span class="n">text</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span> <span class="o">&gt;</span> <span class="n">REGION_TEXT</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>and here is the stm32f4 specific part included at the top:</p>
+
+<figure class='code'><figcaption><span> (stm32f407.memory)</span> <a href='http://denyadzi.github.io/public/code/hello_asm/stm32f407.memory'>download</a></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">MEMORY</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">FLASH</span> <span class="p">(</span><span class="n">rx</span><span class="p">)</span> <span class="o">:</span> <span class="n">ORIGIN</span> <span class="o">=</span> <span class="mh">0x8000000</span><span class="p">,</span>  <span class="n">LENGTH</span> <span class="o">=</span> <span class="mi">1024</span><span class="n">K</span>
+</span><span class='line'>  <span class="n">RAM</span> <span class="p">(</span><span class="o">!</span> <span class="n">rx</span><span class="p">)</span> <span class="o">:</span> <span class="n">ORIGIN</span> <span class="o">=</span> <span class="mh">0x20000000</span><span class="p">,</span> <span class="n">LENGTH</span> <span class="o">=</span> <span class="mi">192</span><span class="n">K</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">_estack</span> <span class="o">=</span> <span class="mh">0x20020000</span><span class="p">;</span>
+</span><span class='line'><span class="n">REGION_ALIAS</span><span class="p">(</span><span class="s">&quot;REGION_TEXT&quot;</span><span class="p">,</span> <span class="n">FLASH</span><span class="p">);</span>
+</span><span class='line'><span class="n">REGION_ALIAS</span><span class="p">(</span><span class="s">&quot;REGION_INT_VECTORS&quot;</span><span class="p">,</span> <span class="n">FLASH</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In stm32f407.memory file two regions of MC&rsquo;s virtual memory map are described (one note here: the space character in RAM&rsquo;s attributes &ldquo;! rx&rdquo; is nessecary because of some bug - without the space this file should not be included via INCLUDE command but pasted directly into basic.ld - then linkage goes fine). This file is included in a script basic.ld. In the script file we just describe regions and order in which input sections should be placed in an output object file. You may also just download these files.</p>
+
+<p>There&rsquo;s one more section generated automatically. It&rsquo;s called .ARM.attributes - I didn&rsquo;t mention it in a script as I&rsquo;m not sure what is it for at the moment and we don&rsquo;t need to use it in a current code. The linker automatically places unmapped sections right after all mapped sections in the output file.</p>
+
+<p>From this moment we can write assembly code just using only .text section and a linker will correctly form an executable. But.. there&rsquo;s one more section called .int_vector_table and which is placed at the beginning of the executable&hellip;</p>
+
+<h2>The MC power on</h2>
+
+<p>Actually there&rsquo;s no need at ENTRY command right now in our linker script which stays for an entry point. After the system is powered on the MC core reads the first word of flash memory - that&rsquo;s the stack top address which is loaded in sp register. So the entry point is known to the core and is equal to the beginning of the flash memory. The second word in the flash is assumed to be the reset handler address and the second step is to jump to that address. The remaining execution process depends on the loaded code or on occasions of hardware interrupts which are not covered in this post. Reset is also an interrupt and when it occurs (for example we push the reset button) the core just reads the reset handler address (or &ldquo;vector&rdquo;) again and jumps to it. The rest of interrupts act the same. The storage of interrupts&#8217; handlers are fixed (interrupt vectors table) - that&rsquo;s how the core is able to jump to the right place on a particular interrupt event.</p>
+
+<h2>The blinking program</h2>
+
+<p>Here is the code:</p>
+
+<figure class='code'><figcaption><span> (main.S)</span> <a href='http://denyadzi.github.io/public/code/hello_asm/main.S'>download</a></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+</pre></td><td class='code'><pre><code class='Gas'><span class='line'>    <span class="na">.syntax</span> <span class="no">unified</span>
+</span><span class='line'>    <span class="na">.cpu</span> <span class="no">cortex-m4</span>
+</span><span class='line'>    <span class="na">.fpu</span> <span class="no">softvfp</span>
+</span><span class='line'>    <span class="na">.thumb</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">#define RCC_BASE        0x40023800</span>
+</span><span class='line'><span class="c">#define RCC_AHB1ENR     RCC_BASE + 0x30 </span>
+</span><span class='line'><span class="c">#define RCC_CR          RCC_BASE</span>
+</span><span class='line'><span class="c">#define RCC_PLLCFGR     RCC_BASE + 0x4</span>
+</span><span class='line'><span class="c">#define RCC_CFGR        RCC_BASE + 0x8</span>
+</span><span class='line'><span class="c">#define GPIOD_BASE      0x40020C00</span>
+</span><span class='line'><span class="c">#define GPIOD_MODER     GPIOD_BASE</span>
+</span><span class='line'><span class="c">#define GPIOD_ODR       GPIOD_BASE + 0x14</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">#define GPIODEN         1 &lt;&lt; 3</span>
+</span><span class='line'><span class="c">#define MODER15_OUT     1 &lt;&lt; 30</span>
+</span><span class='line'><span class="c">#define MODER14_OUT     1 &lt;&lt; 28</span>
+</span><span class='line'><span class="c">#define MODER13_OUT     1 &lt;&lt; 26</span>
+</span><span class='line'><span class="c">#define MODER12_OUT     1 &lt;&lt; 24</span>
+</span><span class='line'><span class="c">#define LED_BLUE        1 &lt;&lt; 15</span>
+</span><span class='line'><span class="c">#define LED_RED         1 &lt;&lt; 14</span>
+</span><span class='line'><span class="c">#define LED_ORANGE      1 &lt;&lt; 13</span>
+</span><span class='line'><span class="c">#define LED_GREEN       1 &lt;&lt; 12</span>
+</span><span class='line'><span class="c">#define DELAY           0x000F</span>
+</span><span class='line'>
+</span><span class='line'><span class="na">.section</span>    <span class="no">.text</span>
+</span><span class='line'>  <span class="na">.weak</span>     <span class="no">_reset</span>              <span class="err">/</span><span class="p">*</span> <span class="no">that</span><span class="err">&#39;</span><span class="no">s</span> <span class="no">because</span> <span class="no">of</span> <span class="no">declaring</span> <span class="no">it</span> <span class="no">as</span> <span class="no">an</span> <span class="no">entry</span> <span class="no">point</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>  <span class="na">.type</span>     <span class="no">_reset</span><span class="p">,</span> <span class="err">%</span><span class="no">function</span>
+</span><span class='line'><span class="nl">_reset:</span>
+</span><span class='line'>    <span class="nf">ldr</span>     <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_AHB1ENR</span>    <span class="err">/</span><span class="p">*</span> <span class="no">firstly</span><span class="p">,</span> <span class="no">to</span> <span class="no">use</span> <span class="no">any</span> <span class="no">peripheral</span><span class="p">,</span> <span class="no">the</span> <span class="no">clock</span> <span class="no">should</span> <span class="no">be</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="no">ldr</span>     <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>            <span class="err">/</span><span class="p">*</span> <span class="no">enabled</span> <span class="no">for</span> <span class="no">it.</span> <span class="no">Different</span> <span class="no">registers</span> <span class="no">are</span> <span class="no">responsible</span> <span class="no">for</span> <span class="no">that</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>                                <span class="err">/*</span> <span class="err">(</span><span class="nf">see</span> <span class="no">reference</span> <span class="no">manual</span><span class="err">&#39;</span><span class="no">s</span> <span class="err">&quot;</span><span class="no">Reset</span> <span class="no">and</span> <span class="no">clock</span> <span class="no">control</span><span class="err">&quot;</span> <span class="no">section</span> <span class="no">on</span> <span class="no">page</span> <span class="mi">210</span><span class="p">).</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>                                <span class="err">/*</span> <span class="nf">For</span> <span class="no">use</span> <span class="no">of</span> <span class="no">GPIOD</span> <span class="no">it</span><span class="err">&#39;</span><span class="no">s</span> <span class="no">clock</span> <span class="no">is</span> <span class="no">enabled</span> <span class="no">in</span> <span class="no">RCC_AHB1ENR</span> <span class="no">register</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">orr</span>     <span class="no">r1</span><span class="p">,</span> <span class="no">GPIODEN</span>         <span class="err">/</span><span class="p">*</span> <span class="no">by</span> <span class="no">setting</span> <span class="no">GPIODEN</span> <span class="no">bit</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">str</span>     <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>     <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">GPIOD_MODER</span>    <span class="err">/</span><span class="p">*</span> <span class="no">port</span> <span class="no">mode</span> <span class="no">configuration</span> <span class="no">ragister</span> <span class="p">(</span><span class="no">input</span><span class="p">,</span><span class="no">output</span><span class="p">,</span> <span class="no">etc</span><span class="p">)</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>     <span class="no">r1</span><span class="p">,</span> <span class="err">=</span><span class="p">(</span><span class="no">MODER15_OUT</span> <span class="err">|</span> <span class="no">MODER14_OUT</span> <span class="err">|</span> <span class="no">MODER13_OUT</span> <span class="err">|</span> <span class="no">MODER12_OUT</span><span class="p">)</span>
+</span><span class='line'>    <span class="nf">str</span>     <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>            <span class="err">/</span><span class="p">*</span> <span class="no">configuring</span> <span class="no">GPIOD</span> <span class="no">pins</span> <span class="mi">12</span><span class="p">-</span><span class="mi">15</span> <span class="no">as</span> <span class="no">outputs</span> <span class="no">where</span> <span class="no">LEDs</span> <span class="no">are</span> <span class="no">connected</span> <span class="no">to</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">mov</span>     <span class="no">r1</span><span class="p">,</span> <span class="mi">0</span>              <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">for</span> <span class="no">further</span> <span class="no">LED</span> <span class="no">selection</span>    <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>     <span class="no">r2</span><span class="p">,</span> <span class="err">=</span><span class="no">GPIOD_ODR</span>      <span class="err">/</span><span class="p">*</span> <span class="no">GPIOD</span> <span class="no">output</span> <span class="no">data</span> <span class="no">register</span>  <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>                                <span class="err">/*</span> <span class="nf">writing</span> <span class="no">to</span> <span class="no">it</span> <span class="no">controls</span> <span class="no">pins</span><span class="err">&#39;</span> <span class="no">voltage</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'><span class="nl">.Lblink:</span>
+</span><span class='line'>    <span class="nf">movw</span>    <span class="no">r1</span><span class="p">,</span> <span class="no">LED_GREEN</span>      
+</span><span class='line'>    <span class="no">str</span>     <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r2</span><span class="err">]</span>            <span class="err">/</span><span class="p">*</span> <span class="no">setting</span> <span class="no">LED_GREEN</span> <span class="no">bit</span> <span class="no">on</span> <span class="no">GPIOD_ODR</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">bl</span>      <span class="no">.Ldelay</span>             <span class="err">/</span><span class="p">*</span> <span class="no">pause</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">movw</span>    <span class="no">r1</span><span class="p">,</span> <span class="no">LED_BLUE</span>
+</span><span class='line'>    <span class="no">str</span>     <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r2</span><span class="err">]</span>            <span class="err">/</span><span class="p">*</span> <span class="no">setting</span> <span class="no">LED_BLUE</span> <span class="no">bit</span> <span class="no">on</span> <span class="no">GPIOD_ODR</span>  <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">bl</span>      <span class="no">.Ldelay</span>             <span class="err">/</span><span class="p">*</span> <span class="no">pause</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">movw</span>    <span class="no">r1</span><span class="p">,</span> <span class="no">LED_RED</span>
+</span><span class='line'>    <span class="nf">str</span>     <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r2</span><span class="err">]</span>            <span class="err">/</span><span class="p">*</span> <span class="no">etc</span>  <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">bl</span>      <span class="no">.Ldelay</span>
+</span><span class='line'>    <span class="nf">movw</span>    <span class="no">r1</span><span class="p">,</span> <span class="no">LED_ORANGE</span>
+</span><span class='line'>    <span class="nf">str</span>     <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r2</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">bl</span>      <span class="no">.Ldelay</span>
+</span><span class='line'>    <span class="nf">b</span>       <span class="no">.Lblink</span>
+</span><span class='line'>
+</span><span class='line'><span class="nl">.Ldelay:</span>
+</span><span class='line'>    <span class="nf">movt</span>    <span class="no">r0</span><span class="p">,</span> <span class="no">DELAY</span>           <span class="err">/</span><span class="p">*</span> <span class="no">moving</span> <span class="no">DELAY</span> <span class="no">value</span> <span class="no">into</span> <span class="no">high</span> <span class="no">halfword</span> <span class="no">of</span> <span class="no">the</span> <span class="no">register</span>  <span class="p">*</span><span class="err">/</span>
+</span><span class='line'><span class="err">1:</span>                              <span class="err">/*</span> <span class="nf">to</span> <span class="no">make</span> <span class="no">a</span> <span class="no">big</span> <span class="no">number</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">subs</span>    <span class="no">R0</span><span class="p">,</span> <span class="no">R0</span><span class="p">,</span> <span class="mi">1</span>           <span class="err">/</span><span class="p">*</span> <span class="no">and</span> <span class="no">just</span> <span class="no">spend</span> <span class="no">time</span> <span class="no">substracting</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">bne</span>     <span class="mi">1</span><span class="no">b</span>
+</span><span class='line'>    <span class="nf">bx</span>      <span class="no">lr</span>                  <span class="err">/</span><span class="p">*</span> <span class="no">return</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.size</span>   <span class="no">_reset</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">_reset</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="na">.section</span>    <span class="no">.int_vector_table</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">,</span> <span class="err">%</span><span class="no">progbits</span>   <span class="err">/</span><span class="p">*</span> <span class="no">interrupt</span> <span class="no">table</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>                                                <span class="err">/*</span> <span class="err">&quot;</span><span class="nf">a</span><span class="err">&quot;</span> <span class="p">-</span> <span class="no">tells</span> <span class="no">that</span> <span class="no">section</span> <span class="no">is</span> <span class="no">allocatable</span>  <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>                                                <span class="err">/*</span> <span class="err">(</span><span class="nf">see</span> <span class="no">ld</span> <span class="no">manual</span><span class="p">)</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>                                                <span class="err">/*</span> <span class="err">%</span><span class="nf">progbits</span> <span class="p">-</span> <span class="no">tells</span> <span class="no">that</span> <span class="no">section</span> <span class="no">contains</span> <span class="no">data</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>                                                <span class="err">/*</span> <span class="err">(</span><span class="nf">see</span> <span class="no">gas</span> <span class="no">manual</span><span class="p">)</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="na">.type</span>   <span class="no">basic_vectors</span><span class="p">,</span> <span class="err">%</span><span class="no">object</span>
+</span><span class='line'><span class="nl">basic_vectors:</span>
+</span><span class='line'>    <span class="na">.word</span>   <span class="no">_estack</span>             <span class="err">/</span><span class="p">*</span> <span class="no">stack</span> <span class="no">top</span> <span class="no">address</span> <span class="p">(</span><span class="no">declared</span> <span class="no">in</span> <span class="no">basic.ld</span><span class="p">)</span> <span class="p">-</span> <span class="no">the</span> <span class="no">last</span> <span class="no">SRAM</span> <span class="no">address</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="na">.word</span>   <span class="no">_reset</span>              <span class="err">/</span><span class="p">*</span> <span class="no">the</span> <span class="no">address</span> <span class="no">of</span> <span class="no">a</span> <span class="no">reset</span> <span class="no">handler</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.size</span>   <span class="no">basic_vectors</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">basic_vectors</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I tried to write self-expanatory code with comments, so I won&rsquo;t stop on it&rsquo;s contents. If you have any questions feel free to send me a letter. Now let me describe the compilation process. This code has to be compiled with gcc, but not with as. That&rsquo;s because it uses the power of preprocessing stage to calculate different values in a set of #define. The following commands need to be run:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>arm-none-eabi-gcc -Wall -Wextra -o main.elf -nostdlib -mcpu<span class="o">=</span>cortex-m4 -mthumb -Tbasic.ld main.S
+</span><span class='line'><span class="nv">$ </span>arm-none-eabi-objcopy -O binary main.elf main.bin
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The first one runs preprocessing, assembling and linking stages and silently generates ELF-format executable if there are no errors. Note some new parameters. The -nostdlib parameter tells the linker not to link standard c library, -Tbasic.ld passes the linker script to the ld. The script file should be present at current directory together with the source.</p>
+
+<p>The second just transformes the ELF-format executable which can be run in a linux environment into a binary suitable to be executed by MC.</p>
+
+<p>Huuuuh! The final step is to burn our binary file into discovery board. Connect the board and run the following command:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>st-flash write main.bin 0x8000000
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Read carefully the docs on stlink. If everything is OK - the LEDs are already blinking. Here is a compiled executable - <a href="http://denyadzi.github.io/public/code/hello_asm/main.bin">download</a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Installing Neccessary Tools for Stm32f4discovery]]></title>

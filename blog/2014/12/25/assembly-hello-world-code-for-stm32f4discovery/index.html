@@ -1,24 +1,90 @@
-<?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: Stm32f4discovery | Blog on embedded programming]]></title>
-  <link href="http://denyadzi.github.io/blog/categories/stm32f4discovery/atom.xml" rel="self"/>
-  <link href="http://denyadzi.github.io/"/>
-  <updated>2014-12-25T21:14:54+03:00</updated>
-  <id>http://denyadzi.github.io/</id>
-  <author>
-    <name><![CDATA[Dzianis Yatskevich]]></name>
-    
-  </author>
-  <generator uri="http://octopress.org/">Octopress</generator>
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Assembly Hello World Code for Stm32f4discovery - Blog on embedded programming</title>
+  <meta name="author" content="Dzianis Yatskevich">
 
   
-  <entry>
-    <title type="html"><![CDATA[Assembly Hello World Code for Stm32f4discovery]]></title>
-    <link href="http://denyadzi.github.io/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery/"/>
-    <updated>2014-12-25T14:22:40+03:00</updated>
-    <id>http://denyadzi.github.io/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery</id>
-    <content type="html"><![CDATA[<p>Hello everyone! First of all: why use assembly language? In my opinion one should remove any kind of intermediary to know something well - remove anything that can be removed and examine the target directly. When programing for PC it&rsquo;s common not to think what processor is going to execute the code. We don&rsquo;t think about the amount of bytes that are generated for the execution. I&rsquo;m talking just about the corresponing level of abstraction - tools should correspond to the task.</p>
+  <meta name="description" content="Hello everyone! First of all: why use assembly language? In my opinion one should remove any kind of intermediary to know something well - remove &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://denyadzi.github.io/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Blog on embedded programming" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Blog on embedded programming</a></h1>
+  
+    <h2>The trip to the dark side</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:denyadzi.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Assembly Hello World Code for Stm32f4discovery</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-12-25T14:22:40+03:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>25</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>2:22 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Hello everyone! First of all: why use assembly language? In my opinion one should remove any kind of intermediary to know something well - remove anything that can be removed and examine the target directly. When programing for PC it&rsquo;s common not to think what processor is going to execute the code. We don&rsquo;t think about the amount of bytes that are generated for the execution. I&rsquo;m talking just about the corresponing level of abstraction - tools should correspond to the task.</p>
 
 <p>The task for this post is:</p>
 
@@ -44,12 +110,15 @@
 
 <p>From memory map we can see where flash memory and SRAM memory are located. Their address boundaries are exactly what we need now. We need to provide the linker a possibility to manage addresses within our executable and to place segments into right places. The way to do that is to create a linker script. Linker has the default one which can be viewed in a such way:</p>
 
-<pre><code class="bash">$ arm-none-eabi-ld --verbose
-</code></pre>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>arm-none-eabi-ld --verbose
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>It&rsquo;s huge ) And it won&rsquo;t help us. We need the new one for our MC. And it will be much simpler. <a href="https://sourceware.org/binutils/docs/ld/Scripts.html#Scripts">Ld documentation on scripts</a> is VERY useful reading to understand object files and linker scripting, so please refer to the doc and let me be less verbose).</p>
 
-<p>Here is the script:
+<p>Here is the script:</p>
+
 <figure class='code'><figcaption><span> (basic.ld)</span> <a href='/public/code/hello_asm/basic.ld'>download</a></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -75,9 +144,11 @@
 </span><span class='line'>    <span class="o">*</span><span class="p">(.</span><span class="n">text</span><span class="p">)</span>
 </span><span class='line'>  <span class="p">}</span> <span class="o">&gt;</span> <span class="n">REGION_TEXT</span>
 </span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>and here is the stm32f4 specific part included at the top:
+
+<p>and here is the stm32f4 specific part included at the top:</p>
+
 <figure class='code'><figcaption><span> (stm32f407.memory)</span> <a href='/public/code/hello_asm/stm32f407.memory'>download</a></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -95,7 +166,8 @@
 </span><span class='line'><span class="n">_estack</span> <span class="o">=</span> <span class="mh">0x20020000</span><span class="p">;</span>
 </span><span class='line'><span class="n">REGION_ALIAS</span><span class="p">(</span><span class="s">&quot;REGION_TEXT&quot;</span><span class="p">,</span> <span class="n">FLASH</span><span class="p">);</span>
 </span><span class='line'><span class="n">REGION_ALIAS</span><span class="p">(</span><span class="s">&quot;REGION_INT_VECTORS&quot;</span><span class="p">,</span> <span class="n">FLASH</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>In stm32f407.memory file two regions of MC&rsquo;s virtual memory map are described (one note here: the space character in RAM&rsquo;s attributes &ldquo;! rx&rdquo; is nessecary because of some bug - without the space this file should not be included via INCLUDE command but pasted directly into basic.ld - then linkage goes fine). This file is included in a script basic.ld. In the script file we just describe regions and order in which input sections should be placed in an output object file. You may also just download these files.</p>
 
@@ -109,7 +181,8 @@
 
 <h2>The blinking program</h2>
 
-<p>Here is the code:
+<p>Here is the code:</p>
+
 <figure class='code'><figcaption><span> (main.S)</span> <a href='/public/code/hello_asm/main.S'>download</a></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -226,11 +299,11 @@
 </span><span class='line'>    <span class="nf">ldr</span>     <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">GPIOD_MODER</span>    <span class="err">/</span><span class="p">*</span> <span class="no">port</span> <span class="no">mode</span> <span class="no">configuration</span> <span class="no">ragister</span> <span class="p">(</span><span class="no">input</span><span class="p">,</span><span class="no">output</span><span class="p">,</span> <span class="no">etc</span><span class="p">)</span> <span class="p">*</span><span class="err">/</span>
 </span><span class='line'>    <span class="nf">ldr</span>     <span class="no">r1</span><span class="p">,</span> <span class="err">=</span><span class="p">(</span><span class="no">MODER15_OUT</span> <span class="err">|</span> <span class="no">MODER14_OUT</span> <span class="err">|</span> <span class="no">MODER13_OUT</span> <span class="err">|</span> <span class="no">MODER12_OUT</span><span class="p">)</span>
 </span><span class='line'>    <span class="nf">str</span>     <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>            <span class="err">/</span><span class="p">*</span> <span class="no">configuring</span> <span class="no">GPIOD</span> <span class="no">pins</span> <span class="mi">12</span><span class="p">-</span><span class="mi">15</span> <span class="no">as</span> <span class="no">outputs</span> <span class="no">where</span> <span class="no">LEDs</span> <span class="no">are</span> <span class="no">connected</span> <span class="no">to</span> <span class="p">*</span><span class="err">/</span>
-</span><span class='line'>    <span class="nf">mov</span>     <span class="no">r1</span><span class="p">,</span> <span class="mi">0</span>		        <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">for</span> <span class="no">further</span> <span class="no">LED</span> <span class="no">selection</span>	 <span class="p">*</span><span class="err">/</span>
-</span><span class='line'>    <span class="nf">ldr</span>     <span class="no">r2</span><span class="p">,</span> <span class="err">=</span><span class="no">GPIOD_ODR</span>      <span class="err">/</span><span class="p">*</span> <span class="no">GPIOD</span> <span class="no">output</span> <span class="no">data</span> <span class="no">register</span>	 <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">mov</span>     <span class="no">r1</span><span class="p">,</span> <span class="mi">0</span>              <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">for</span> <span class="no">further</span> <span class="no">LED</span> <span class="no">selection</span>    <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>     <span class="no">r2</span><span class="p">,</span> <span class="err">=</span><span class="no">GPIOD_ODR</span>      <span class="err">/</span><span class="p">*</span> <span class="no">GPIOD</span> <span class="no">output</span> <span class="no">data</span> <span class="no">register</span>  <span class="p">*</span><span class="err">/</span>
 </span><span class='line'>                                <span class="err">/*</span> <span class="nf">writing</span> <span class="no">to</span> <span class="no">it</span> <span class="no">controls</span> <span class="no">pins</span><span class="err">&#39;</span> <span class="no">voltage</span> <span class="p">*</span><span class="err">/</span>
 </span><span class='line'><span class="nl">.Lblink:</span>
-</span><span class='line'>    <span class="nf">movw</span>    <span class="no">r1</span><span class="p">,</span> <span class="no">LED_GREEN</span>		
+</span><span class='line'>    <span class="nf">movw</span>    <span class="no">r1</span><span class="p">,</span> <span class="no">LED_GREEN</span>      
 </span><span class='line'>    <span class="no">str</span>     <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r2</span><span class="err">]</span>            <span class="err">/</span><span class="p">*</span> <span class="no">setting</span> <span class="no">LED_GREEN</span> <span class="no">bit</span> <span class="no">on</span> <span class="no">GPIOD_ODR</span> <span class="p">*</span><span class="err">/</span>
 </span><span class='line'>    <span class="nf">bl</span>      <span class="no">.Ldelay</span>             <span class="err">/</span><span class="p">*</span> <span class="no">pause</span> <span class="p">*</span><span class="err">/</span>
 </span><span class='line'>    <span class="nf">movw</span>    <span class="no">r1</span><span class="p">,</span> <span class="no">LED_BLUE</span>
@@ -265,93 +338,140 @@
 </span><span class='line'>    <span class="na">.word</span>   <span class="no">_reset</span>              <span class="err">/</span><span class="p">*</span> <span class="no">the</span> <span class="no">address</span> <span class="no">of</span> <span class="no">a</span> <span class="no">reset</span> <span class="no">handler</span> <span class="p">*</span><span class="err">/</span>
 </span><span class='line'>
 </span><span class='line'>    <span class="na">.size</span>   <span class="no">basic_vectors</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">basic_vectors</span>
-</span></code></pre></td></tr></table></div></figure></p>
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>I tried to write self-expanatory code with comments, so I won&rsquo;t stop on it&rsquo;s contents. If you have any questions feel free to send me a letter. Now let me describe the compilation process. This code has to be compiled with gcc, but not with as. That&rsquo;s because it uses the power of preprocessing stage to calculate different values in a set of #define. The following commands need to be run:</p>
 
-<pre><code class="bash">$ arm-none-eabi-gcc -Wall -Wextra -o main.elf -nostdlib -mcpu=cortex-m4 -mthumb -Tbasic.ld main.S
-$ arm-none-eabi-objcopy -O binary main.elf main.bin
-</code></pre>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>arm-none-eabi-gcc -Wall -Wextra -o main.elf -nostdlib -mcpu<span class="o">=</span>cortex-m4 -mthumb -Tbasic.ld main.S
+</span><span class='line'><span class="nv">$ </span>arm-none-eabi-objcopy -O binary main.elf main.bin
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>The first one runs preprocessing, assembling and linking stages and silently generates ELF-format executable if there are no errors. Note some new parameters. The -nostdlib parameter tells the linker not to link standard c library, -Tbasic.ld passes the linker script to the ld. The script file should be present at current directory together with the source.</p>
 
 <p>The second just transformes the ELF-format executable which can be run in a linux environment into a binary suitable to be executed by MC.</p>
 
-<p>Huuuuh! The final step is to burn our binary file into discovery board. Connect the board and run the following command:
-<code>bash
-$ st-flash write main.bin 0x8000000
-</code></p>
+<p>Huuuuh! The final step is to burn our binary file into discovery board. Connect the board and run the following command:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>st-flash write main.bin 0x8000000
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>Read carefully the docs on stlink. If everything is OK - the LEDs are already blinking. Here is a compiled executable - <a href="/public/code/hello_asm/main.bin">download</a></p>
-]]></content>
-  </entry>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
   
-  <entry>
-    <title type="html"><![CDATA[Installing Neccessary Tools for Stm32f4discovery]]></title>
-    <link href="http://denyadzi.github.io/blog/2014/12/25/installing-neccessary-tools-for-stm32f4discovery/"/>
-    <updated>2014-12-25T07:12:20+03:00</updated>
-    <id>http://denyadzi.github.io/blog/2014/12/25/installing-neccessary-tools-for-stm32f4discovery</id>
-    <content type="html"><![CDATA[<p>Hello everyone! This post starts my <a href="http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/LN1848/PF252419?s_searchtype=partnumber">stm32f4discovery</a> learning experience story. This board truely deserves only good words to describe with. Big thanks to ST. That&rsquo;s the one I have: <img src="/public/images/tools/stm32f4DISCOVERY.JPG"></p>
 
-<!--more-->
+<span class="byline author vcard">Posted by <span class="fn">Dzianis Yatskevich</span></span>
+
+      
 
 
-<p>The trip to the dark side is a comparatevely low level experience. It&rsquo;s like a trip to the wild where we need to use a kind of primitive tools. I think it is the right way of learning - especially at the beginning. I mean - no IDE. Lets leave IDE for rapid development.</p>
-
-<p>In this post we&rsquo;re going to install tools under gnu/linux (mb it will be possible to install them for windows too) needed to make binaries for our ARM processor, load, debug them and have fun of everything working.</p>
-
-<p>So, these tools are:</p>
-
-<ul>
-<li>a toolchain built for arm-architecture (<a href="https://en.wikipedia.org/wiki/GNU_toolchain">GNU toolchain</a>)</li>
-<li>a programmer (not another one person but a software driver for embedded in stm32f4discovery piece of hardware called <a href="http://www.st.com/web/en/catalog/tools/FM146/CL1984/SC720/SS1450/PF251168?s_searchtype=reco">STLink</a></li>
-</ul>
 
 
-<p>I&rsquo;ve tested the following on Debian 7 Wheezy 64bit and on Fedora 15 32bit.</p>
+<time class='entry-date' datetime='2014-12-25T14:22:40+03:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>25</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>2:22 pm</span></time>
+      
 
-<h2>Toolchain</h2>
-
-<p>Debian users can refer to <a href="https://wiki.debian.org/EmdebianToolchain">this</a> tutorial to manage the toolchain installation.</p>
-
-<p>I preferred more universal way, though. Thanks to <a href="https://launchpad.net/~team-gcc-arm-embedded">GCC ARM Embedded Maintainers team</a> we&rsquo;ve got <a href="https://launchpad.net/gcc-arm-embedded">this pre-built toolchain</a>. We just download, unpack, add bin folder to PATH and it&rsquo;s done. The one thing to mention for 64bit OS users is that 32bit libc and libncurses are needed for this toolchain to work (see the <a href="https://launchpadlibrarian.net/192227680/readme.txt">readme.txt</a> for more detailed instructions).</p>
-
-<p>To test our toolchain lets write a little assembly code:</p>
-
-<p><figure class='code'><figcaption><span> (test.S)</span> <a href='/public/code/tools/test.S'>download</a></figcaption>
-<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='Gas'><span class='line'><span class="na">.section</span>    <span class="no">.text</span>
-</span><span class='line'>    <span class="nf">mov</span>     <span class="no">r0</span><span class="p">,</span> <span class="c">#0xFF</span>
-</span></code></pre></td></tr></table></div></figure></p>
-
-<p>Then, in the console :</p>
-
-<pre><code class="bash">$ arm-none-eabi-as -mthumb -mcpu=cortex-m4 -o test.o test.S
-</code></pre>
-
-<p>In this command we tell the assembler that we&rsquo;re using <a href="http://en.wikipedia.org/wiki/ARM_architecture#Thumb">thumb instruction set</a> and we&rsquo;re writing code for <a href="http://en.wikipedia.org/wiki/ARM_Cortex-M#Cortex-M4">Cortex-M4 core</a>. If no complains from command line - we&rsquo;re done with the toolchain.</p>
-
-<h2>STLink</h2>
-
-<p>To get STLink working is also fairly simple. It can be found on a <a href="https://github.com/texane/stlink">github repository</a>. Dependencies we need to resolve are: libusb (of version >=1.0), libusb-dev and pkg-config packages. Please consult the <a href="https://github.com/texane/stlink/blob/master/README">README</a> file for detailed instructions.</p>
-
-<p>To test st-link tools being installed correctly, add the STLink installation directory into your PATH environment variable and just type in the console:
-<code>bash
-$ st-flash
-</code>
-And the response you should get is like:
-<code>
-invalid command line
-stlinkv1 command line: ./flash [--debug] [--reset] {read|write} /dev/sgX path addr &lt;size&gt;
-stlinkv1 command line: ./flash [--debug] /dev/sgX erase
-stlinkv2 command line: ./flash [--debug] [--reset] {read|write} path addr &lt;size&gt;
-stlinkv2 command line: ./flash [--debug] erase
-                       use hex format for addr and &lt;size&gt;
-</code></p>
-
-<p>That&rsquo;s it. Next step is to write a traditional leds-blinking program. Feel free to contact me if you have smth to ask or talk about</p>
-]]></content>
-  </entry>
+<span class="categories">
   
-</feed>
+    <a class='category' href='/blog/categories/stm32f4discovery/'>stm32f4discovery</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://denyadzi.github.io/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery/" data-via="" data-counturl="http://denyadzi.github.io/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/12/25/installing-neccessary-tools-for-stm32f4discovery/" title="Previous Post: Installing neccessary tools for stm32f4discovery">&laquo; Installing neccessary tools for stm32f4discovery</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery/">Assembly Hello World Code for Stm32f4discovery</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/25/installing-neccessary-tools-for-stm32f4discovery/">Installing Neccessary Tools for Stm32f4discovery</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>About Me</h1>
+  <p>I&#8217;m Dzianis from Belarus. My leading interest lays within computer science and involves studying both high and low level technologies. On the other hand much inspiration I get from eastern culture, nature and music.</p>
+  <ul>
+  If you need to contact - feel free and here are some adresses:
+    <li>den.overtone[doggy]gmail.com</li>
+    <li><a href="https://www.facebook.com/dzianis.yadzi" target="_blank">Facebook</a></li>
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  2014 - by Dzianis Yatskevich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

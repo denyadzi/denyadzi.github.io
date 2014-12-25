@@ -24,28 +24,30 @@
 #define DELAY           0x000F
 
 .section    .text
-  .weak     _reset
+  .weak     _reset              /* that's because of declaring it as an entry point */
   .type     _reset, %function
 _reset:  
-    ldr     r0, =RCC_AHB1ENR    // firstly, to use any peripheral clock should be 
-    ldr     r1, [r0]            // enabled for it. For GPIOD it is done in RCC_AHB1ENR register.
-	orr     r1, GPIODEN         // setting GPIODEN bit
-	str     r1, [r0]
-	ldr     r0, =GPIOD_MODER
-	ldr     r1, =(MODER15_OUT | MODER14_OUT | MODER13_OUT | MODER12_OUT)
-	str     r1, [r0]            // ^^^ configuring GPIOD pins 12-15 as outputs
-	mov     r1, 0			
-	ldr     r2, =GPIOD_ODR      // GPIOD output data register	
-                                // writing to it controls pins' voltage
+    ldr     r0, =RCC_AHB1ENR    /* firstly, to use any peripheral, the clock should be */ 
+    ldr     r1, [r0]            /* enabled for it. Different registers are responsible for that */
+                                /* (see reference manual's "Reset and clock control" section on page 210). */
+                                /* For use of GPIOD it's clock is enabled in RCC_AHB1ENR register */
+    orr     r1, GPIODEN         /* by setting GPIODEN bit */
+    str     r1, [r0]
+    ldr     r0, =GPIOD_MODER    /* port mode configuration ragister (input,output, etc) */
+    ldr     r1, =(MODER15_OUT | MODER14_OUT | MODER13_OUT | MODER12_OUT)
+    str     r1, [r0]            /* configuring GPIOD pins 12-15 as outputs where LEDs are connected to */
+    mov     r1, 0		        /* clearing for further LED selection	 */
+    ldr     r2, =GPIOD_ODR      /* GPIOD output data register	 */
+                                /* writing to it controls pins' voltage */
 .Lblink:
-	movw    r1, LED_GREEN		
-	str     r1, [r2]            // setting LED_GREEN bit on GPIOD_ODR
-	bl      .Ldelay             // pause
-	movw    r1, LED_BLUE 
-	str     r1, [r2]            // setting LED_BLUE bit on GPIOD_ODR 
-	bl      .Ldelay             // pause
+    movw    r1, LED_GREEN		
+    str     r1, [r2]            /* setting LED_GREEN bit on GPIOD_ODR */
+    bl      .Ldelay             /* pause */
+    movw    r1, LED_BLUE 
+    str     r1, [r2]            /* setting LED_BLUE bit on GPIOD_ODR  */
+    bl      .Ldelay             /* pause */
     movw    r1, LED_RED
-    str     r1, [r2]            // etc 
+    str     r1, [r2]            /* etc  */
     bl      .Ldelay
     movw    r1, LED_ORANGE
     str     r1, [r2]
@@ -53,19 +55,23 @@ _reset:
     b       .Lblink
 
 .Ldelay:
-	movt    r0, DELAY           // moving DELAY value into high halfword of the register 
-1:                              // to make a big number
-	subs    R0, R0, 1           // and just spend time substracting
-	bne     1b
-    bx      lr                  // return
+    movt    r0, DELAY           /* moving DELAY value into high halfword of the register  */
+1:                              /* to make a big number */
+    subs    R0, R0, 1           /* and just spend time substracting */
+    bne     1b
+    bx      lr                  /* return */
 
     .size   _reset, . - _reset
 
 
-.section    .int_vector_table, "a", %progbits
+.section    .int_vector_table, "a", %progbits   /* interrupt table */
+                                                /* "a" - tells that section is allocatable  */
+                                                /* (see ld manual) */
+                                                /* %progbits - tells that section contains data */
+                                                /* (see gas manual) */
     .type   basic_vectors, %object
 basic_vectors:
-    .word   _estack
-    .word   _reset
+    .word   _estack             /* stack top address (declared in basic.ld) - the last SRAM address */
+    .word   _reset              /* the address of a reset handler */
 
     .size   basic_vectors, . - basic_vectors
