@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Blog on embedded programming]]></title>
-  <link href="http://denyadzi.github.io/atom.xml" rel="self"/>
+  <title><![CDATA[Category: Stm32f4discovery | Blog on embedded programming]]></title>
+  <link href="http://denyadzi.github.io/blog/categories/stm32f4discovery/atom.xml" rel="self"/>
   <link href="http://denyadzi.github.io/"/>
   <updated>2014-12-25T11:31:37+03:00</updated>
   <id>http://denyadzi.github.io/</id>
@@ -18,7 +18,7 @@
     <link href="http://denyadzi.github.io/blog/2014/12/25/installing-neccessary-tools-for-stm32f4discovery/"/>
     <updated>2014-12-25T07:12:20+03:00</updated>
     <id>http://denyadzi.github.io/blog/2014/12/25/installing-neccessary-tools-for-stm32f4discovery</id>
-    <content type="html"><![CDATA[<p>Hello everyone! This post starts my <a href="http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/LN1848/PF252419?s_searchtype=partnumber">stm32f4discovery</a> learning experience story. This board truely deserves only good words to describe with. Big thanks to ST. That&rsquo;s the one I have: <img src="http://denyadzi.github.io/public/images/tools/stm32f4DISCOVERY.JPG"></p>
+    <content type="html"><![CDATA[<p>Hello everyone! This post starts my <a href="http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/LN1848/PF252419?s_searchtype=partnumber">stm32f4discovery</a> learning experience story. This board truely deserves only good words to describe with. Big thanks to ST. That&rsquo;s the one I have: <img src="/public/images/tools/stm32f4DISCOVERY.JPG"></p>
 
 <!--more-->
 
@@ -45,22 +45,17 @@
 
 <p>To test our toolchain lets write a little assembly code:</p>
 
-<figure class='code'><figcaption><span> (test.S)</span> <a href='http://denyadzi.github.io/public/code/tools/test.S'>download</a></figcaption>
+<p><figure class='code'><figcaption><span> (test.S)</span> <a href='/public/code/tools/test.S'>download</a></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 </pre></td><td class='code'><pre><code class='Gas'><span class='line'><span class="na">.section</span>    <span class="no">.text</span>
 </span><span class='line'>    <span class="nf">mov</span>     <span class="no">r0</span><span class="p">,</span> <span class="c">#0xFF</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
+</span></code></pre></td></tr></table></div></figure></p>
 
 <p>Then, in the console :</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>arm-none-eabi-as -mthumb -mcpu<span class="o">=</span>cortex-m4 -o test.o test.S
-</span></code></pre></td></tr></table></div></figure>
-
+<pre><code class="bash">$ arm-none-eabi-as -mthumb -mcpu=cortex-m4 -o test.o test.S
+</code></pre>
 
 <p>In this command we tell the assembler that we&rsquo;re using <a href="http://en.wikipedia.org/wiki/ARM_architecture#Thumb">thumb instruction set</a> and we&rsquo;re writing code for <a href="http://en.wikipedia.org/wiki/ARM_Cortex-M#Cortex-M4">Cortex-M4 core</a>. If no complains from command line - we&rsquo;re done with the toolchain.</p>
 
@@ -68,29 +63,19 @@
 
 <p>To get STLink working is also fairly simple. It can be found on a <a href="https://github.com/texane/stlink">github repository</a>. Dependencies we need to resolve are: libusb (of version >=1.0), libusb-dev and pkg-config packages. Please consult the <a href="https://github.com/texane/stlink/blob/master/README">README</a> file for detailed instructions.</p>
 
-<p>To test st-link tools being installed correctly, add the STLink installation directory into your PATH environment variable and just type in the console:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>st-flash
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>And the response you should get is like:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>invalid <span class="nb">command </span>line
-</span><span class='line'>stlinkv1 <span class="nb">command </span>line: ./flash <span class="o">[</span>--debug<span class="o">]</span> <span class="o">[</span>--reset<span class="o">]</span> <span class="o">{</span><span class="nb">read</span><span class="p">|</span>write<span class="o">}</span> /dev/sgX path addr &lt;size&gt;
-</span><span class='line'>stlinkv1 <span class="nb">command </span>line: ./flash <span class="o">[</span>--debug<span class="o">]</span> /dev/sgX erase
-</span><span class='line'>stlinkv2 <span class="nb">command </span>line: ./flash <span class="o">[</span>--debug<span class="o">]</span> <span class="o">[</span>--reset<span class="o">]</span> <span class="o">{</span><span class="nb">read</span><span class="p">|</span>write<span class="o">}</span> path addr &lt;size&gt;
-</span><span class='line'>stlinkv2 <span class="nb">command </span>line: ./flash <span class="o">[</span>--debug<span class="o">]</span> erase
-</span><span class='line'>                       use hex format <span class="k">for</span> addr and &lt;size&gt;
-</span></code></pre></td></tr></table></div></figure>
-
+<p>To test st-link tools being installed correctly, add the STLink installation directory into your PATH environment variable and just type in the console:
+<code>bash
+$ st-flash
+</code>
+And the response you should get is like:
+<code>
+invalid command line
+stlinkv1 command line: ./flash [--debug] [--reset] {read|write} /dev/sgX path addr &lt;size&gt;
+stlinkv1 command line: ./flash [--debug] /dev/sgX erase
+stlinkv2 command line: ./flash [--debug] [--reset] {read|write} path addr &lt;size&gt;
+stlinkv2 command line: ./flash [--debug] erase
+                       use hex format for addr and &lt;size&gt;
+</code></p>
 
 <p>That&rsquo;s it. Next step is to write a traditional leds-blinking program. Feel free to contact me if you have smth to ask or talk about</p>
 ]]></content>

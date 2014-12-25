@@ -1,0 +1,11 @@
+#define PLLON_OR_MASK   1 << 24
+#define PLLOFF_AND_MASK ~(1 << 24)
+#define PLLSRC_AND_MASK ~(1 << 22)
+#define PLLM_AND_MASK   0xFFFFFFC0 
+#define PLLM_VALUE      8
+#define PLLN_AND_MASK   0xFFFF803F 
+#define PLLN_VALUE      (200 << 6)
+#define PLLP_OR_MASK    3 << 16
+#define SW_PLL_VALUE    2
+#define SW_HSI_VALUE    ~(3)
+
