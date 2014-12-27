@@ -9,7 +9,7 @@
   <meta name="author" content="Dzianis Yatskevich">
 
   
-  <meta name="description" content="Hello everyone! First of all: why use assembly language? In my opinion one should remove any kind of intermediary to know something well - remove &hellip;">
+  <meta name="description" content="Hello everyone! This post is dedicated to learning clock configuration of our stm32f4. By default MC is driven by the internal oscillator (HSI) which &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -65,6 +65,40 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/27/clock-control-on-stm32f4discovery/">Clock Control on Stm32f4discovery</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-12-27T07:14:29+03:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>7:14 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Hello everyone! This post is dedicated to learning clock configuration of our stm32f4. By default MC is driven by the internal oscillator (HSI) which generates 16 MHz signal. The Internal oscillator frequency stability isn&rsquo;t good enough for real world applications. There is a 8 MHz crystal on board of stm32f4discovery. The crystal is needed for another one oscillator called HSE. This oscillator has better than HSI frequency stability characteristics. So we need to know how to change the source of a system clock-signal of the MC.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/12/27/clock-control-on-stm32f4discovery/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -154,6 +188,10 @@
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/12/27/clock-control-on-stm32f4discovery/">Clock Control on Stm32f4discovery</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery/">Assembly Hello World Code for Stm32f4discovery</a>

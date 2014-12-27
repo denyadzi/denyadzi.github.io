@@ -258,9 +258,6 @@
 <span class='line-number'>72</span>
 <span class='line-number'>73</span>
 <span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
 </pre></td><td class='code'><pre><code class='Gas'><span class='line'>    <span class="na">.syntax</span> <span class="no">unified</span>
 </span><span class='line'>    <span class="na">.cpu</span> <span class="no">cortex-m4</span>
 </span><span class='line'>    <span class="na">.fpu</span> <span class="no">softvfp</span>
@@ -268,9 +265,6 @@
 </span><span class='line'>
 </span><span class='line'><span class="c">#define RCC_BASE        0x40023800</span>
 </span><span class='line'><span class="c">#define RCC_AHB1ENR     RCC_BASE + 0x30 </span>
-</span><span class='line'><span class="c">#define RCC_CR          RCC_BASE</span>
-</span><span class='line'><span class="c">#define RCC_PLLCFGR     RCC_BASE + 0x4</span>
-</span><span class='line'><span class="c">#define RCC_CFGR        RCC_BASE + 0x8</span>
 </span><span class='line'><span class="c">#define GPIOD_BASE      0x40020C00</span>
 </span><span class='line'><span class="c">#define GPIOD_MODER     GPIOD_BASE</span>
 </span><span class='line'><span class="c">#define GPIOD_ODR       GPIOD_BASE + 0x14</span>
@@ -320,7 +314,7 @@
 </span><span class='line'><span class="nl">.Ldelay:</span>
 </span><span class='line'>    <span class="nf">movt</span>    <span class="no">r0</span><span class="p">,</span> <span class="no">DELAY</span>           <span class="err">/</span><span class="p">*</span> <span class="no">moving</span> <span class="no">DELAY</span> <span class="no">value</span> <span class="no">into</span> <span class="no">high</span> <span class="no">halfword</span> <span class="no">of</span> <span class="no">the</span> <span class="no">register</span>  <span class="p">*</span><span class="err">/</span>
 </span><span class='line'><span class="err">1:</span>                              <span class="err">/*</span> <span class="nf">to</span> <span class="no">make</span> <span class="no">a</span> <span class="no">big</span> <span class="no">number</span> <span class="p">*</span><span class="err">/</span>
-</span><span class='line'>    <span class="nf">subs</span>    <span class="no">R0</span><span class="p">,</span> <span class="no">R0</span><span class="p">,</span> <span class="mi">1</span>           <span class="err">/</span><span class="p">*</span> <span class="no">and</span> <span class="no">just</span> <span class="no">spend</span> <span class="no">time</span> <span class="no">substracting</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">subs</span>    <span class="no">r0</span><span class="p">,</span> <span class="no">r0</span><span class="p">,</span> <span class="mi">1</span>           <span class="err">/</span><span class="p">*</span> <span class="no">and</span> <span class="no">just</span> <span class="no">spend</span> <span class="no">time</span> <span class="no">substracting</span> <span class="p">*</span><span class="err">/</span>
 </span><span class='line'>    <span class="nf">bne</span>     <span class="mi">1</span><span class="no">b</span>
 </span><span class='line'>    <span class="nf">bx</span>      <span class="no">lr</span>                  <span class="err">/</span><span class="p">*</span> <span class="no">return</span> <span class="p">*</span><span class="err">/</span>
 </span><span class='line'>
@@ -403,6 +397,8 @@
         <a class="basic-alignment left" href="/blog/2014/12/25/installing-neccessary-tools-for-stm32f4discovery/" title="Previous Post: Installing neccessary tools for stm32f4discovery">&laquo; Installing neccessary tools for stm32f4discovery</a>
       
       
+        <a class="basic-alignment right" href="/blog/2014/12/27/clock-control-on-stm32f4discovery/" title="Next Post: Clock control on stm32f4discovery">Clock control on stm32f4discovery &raquo;</a>
+      
     </p>
   </footer>
 </article>
@@ -414,6 +410,10 @@
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/12/27/clock-control-on-stm32f4discovery/">Clock Control on Stm32f4discovery</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery/">Assembly Hello World Code for Stm32f4discovery</a>

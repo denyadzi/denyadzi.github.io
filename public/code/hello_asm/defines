@@ -8,4 +8,7 @@
 #define PLLP_OR_MASK    3 << 16
 #define SW_PLL_VALUE    2
 #define SW_HSI_VALUE    ~(3)
+#define RCC_CR          RCC_BASE
+#define RCC_PLLCFGR     RCC_BASE + 0x4
+#define RCC_CFGR        RCC_BASE + 0x8
 

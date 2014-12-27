@@ -4,7 +4,7 @@
   <title><![CDATA[Blog on embedded programming]]></title>
   <link href="http://denyadzi.github.io/atom.xml" rel="self"/>
   <link href="http://denyadzi.github.io/"/>
-  <updated>2014-12-25T21:14:54+03:00</updated>
+  <updated>2014-12-27T22:02:54+03:00</updated>
   <id>http://denyadzi.github.io/</id>
   <author>
     <name><![CDATA[Dzianis Yatskevich]]></name>
@@ -12,6 +12,281 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Clock Control on Stm32f4discovery]]></title>
+    <link href="http://denyadzi.github.io/blog/2014/12/27/clock-control-on-stm32f4discovery/"/>
+    <updated>2014-12-27T07:14:29+03:00</updated>
+    <id>http://denyadzi.github.io/blog/2014/12/27/clock-control-on-stm32f4discovery</id>
+    <content type="html"><![CDATA[<p>Hello everyone! This post is dedicated to learning clock configuration of our stm32f4. By default MC is driven by the internal oscillator (HSI) which generates 16 MHz signal. The Internal oscillator frequency stability isn&rsquo;t good enough for real world applications. There is a 8 MHz crystal on board of stm32f4discovery. The crystal is needed for another one oscillator called HSE. This oscillator has better than HSI frequency stability characteristics. So we need to know how to change the source of a system clock-signal of the MC.</p>
+
+<!--more-->
+
+
+<p>Just switching to the HSE oscillator will set the frequency of clock-signal to 8 MHz. This value is low for being the &ldquo;heartbeat&rdquo; of a modern device. Here comes the PLL peripheral which&rsquo;s aim is to multiply signal&rsquo;s frequency by some factor. Using PLL makes it possible to reach the clock-signal frequency up to 168 MHz.</p>
+
+<p>I&rsquo;ve played with it for a while&hellip; And here is the story. There were no problems while selecting HSE as the source. Configuring and enabling PLL is also simple. But some strange crazy things started happening after I selected PLL as the source for a system clock. The most unpleasant ones were random fails of burning into the flash or burning into the wrong address of flash&hellip;</p>
+
+<p>I took one of the example sources from ST library then and there I saw much preparatory stuff before speeding up the device - including some flash configuration. Fairly speaking, dealing with IDE isolates a programmer from such an experience - all the preparation is done behind the scenes before the main routine is called and everything is working fine. But such experience of investigating some problem is a real charm. That&rsquo;s why avoiding problems should not be our way.</p>
+
+<p>So, in this post we won&rsquo;t jump so high (or low ?? :) ). The purpose is to switch to the HSE oscillator.</p>
+
+<h2>The code</h2>
+
+<p>The program is a simple one-led-blinking program, here is the source code:</p>
+
+<figure class='code'><figcaption><span> (changing_clock.S)</span> <a href='http://denyadzi.github.io/public/code/changing_clock/changing_clock.S'>download</a></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+</pre></td><td class='code'><pre><code class='Gas'><span class='line'>    <span class="na">.thumb</span>
+</span><span class='line'>    <span class="na">.syntax</span>     <span class="no">unified</span>
+</span><span class='line'>    <span class="na">.cpu</span>        <span class="no">cortex-m4</span>
+</span><span class='line'><span class="c">#define RCC_BASE            0x40023800</span>
+</span><span class='line'><span class="c">#define RCC_CR              RCC_BASE</span>
+</span><span class='line'><span class="c">#define RCC_CFGR            RCC_BASE + 0x08</span>
+</span><span class='line'><span class="c">#define RCC_PLLCFGR         RCC_BASE + 0x04</span>
+</span><span class='line'><span class="c">#define RCC_AHB1ENR         RCC_BASE + 0x30</span>
+</span><span class='line'><span class="c">#define RCC_CIR             RCC_BASE + 0x0C</span>
+</span><span class='line'><span class="c">#define GPIOD_BASE          0x40020C00</span>
+</span><span class='line'><span class="c">#define GPIOD_MODER         GPIOD_BASE</span>
+</span><span class='line'><span class="c">#define GPIOD_ODR           GPIOD_BASE + 0x14</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">#define GPIODEN             1 &lt;&lt; 3</span>
+</span><span class='line'><span class="c">#define MODER12_OUT         1 &lt;&lt; 24</span>
+</span><span class='line'><span class="c">#define LED_GREEN           1 &lt;&lt; 12</span>
+</span><span class='line'><span class="c">#define PLLON               1 &lt;&lt; 24</span>
+</span><span class='line'><span class="c">#define HSION               1</span>
+</span><span class='line'><span class="c">#define HSEBYP              1 &lt;&lt; 18</span>
+</span><span class='line'><span class="c">#define HSEON               1 &lt;&lt; 16</span>
+</span><span class='line'><span class="c">#define HSERDY              1 &lt;&lt; 17</span>
+</span><span class='line'><span class="c">#define CSSON               1 &lt;&lt; 19</span>
+</span><span class='line'><span class="c">#define SW0                 1</span>
+</span><span class='line'><span class="c">#define SWS0                1 &lt;&lt; 2             </span>
+</span><span class='line'>
+</span><span class='line'><span class="c">#define DELAY               0x5F</span>
+</span><span class='line'><span class="c">#define HSE_STARTUP_TIMEOUT 0x1</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">#define RCC_CFGR_SWS        3 &lt;&lt; 2</span>
+</span><span class='line'>
+</span><span class='line'><span class="na">.section</span>        <span class="no">.text</span>
+</span><span class='line'>    <span class="na">.type</span>       <span class="no">_reset</span><span class="p">,</span> <span class="err">%</span><span class="no">function</span>
+</span><span class='line'><span class="nl">_reset:</span>
+</span><span class='line'>    <span class="nf">bl</span>          <span class="no">.Lstartup</span>
+</span><span class='line'>    <span class="nf">bl</span>          <span class="no">.Linit_clock</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_AHB1ENR</span>        <span class="err">/</span><span class="p">*</span> <span class="no">this</span> <span class="no">register</span> <span class="no">controls</span> <span class="no">some</span> <span class="no">amount</span> <span class="no">of</span> <span class="no">peripherals</span><span class="err">&#39;</span> <span class="no">clock</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">GPIODEN</span>             <span class="err">/</span><span class="p">*</span> <span class="no">enabling</span> <span class="no">GPIOD</span> <span class="no">clock</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">GPIOD_MODER</span>        <span class="err">/</span><span class="p">*</span> <span class="no">GPIOD</span> <span class="no">mode</span> <span class="no">configuration</span> <span class="no">register</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">=</span><span class="no">MODER12_OUT</span>        <span class="err">/</span><span class="p">*</span> <span class="no">set</span> <span class="mi">12</span> <span class="no">pin</span> <span class="no">of</span> <span class="no">GPIOD</span> <span class="no">as</span> <span class="no">output</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">GPIOD_ODR</span>          <span class="err">/</span><span class="p">*</span> <span class="no">port</span> <span class="no">output</span> <span class="no">register</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">eor</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">r1</span>                  <span class="err">/</span><span class="p">*</span> <span class="no">elegant</span> <span class="no">way</span> <span class="no">to</span> <span class="no">clean</span> <span class="no">register</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">eor</span>         <span class="no">r2</span> <span class="p">,</span><span class="no">r2</span>
+</span><span class='line'><span class="nl">.Lblink:</span>
+</span><span class='line'>    <span class="nf">mov</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">LED_GREEN</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>                <span class="err">/</span><span class="p">*</span> <span class="no">setting</span> <span class="no">LED_GREEN</span> <span class="no">bit</span> <span class="no">in</span> <span class="no">GPIOD_ODR</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">bl</span>          <span class="no">.Ldelay</span>                 <span class="err">/</span><span class="p">*</span> <span class="no">pause</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">eor</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">r1</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>                <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">GPIOD_ODR</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">bl</span>          <span class="no">.Ldelay</span>                 <span class="err">/</span><span class="p">*</span> <span class="no">pause</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">b</span>           <span class="no">.Lblink</span>                 <span class="err">/</span><span class="p">*</span> <span class="no">and</span> <span class="no">so</span> <span class="no">on</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>
+</span><span class='line'><span class="nl">.Ldelay:</span>
+</span><span class='line'>    <span class="nf">movt</span>        <span class="no">r2</span><span class="p">,</span> <span class="no">DELAY</span>
+</span><span class='line'><span class="err">1:</span>
+</span><span class='line'>    <span class="nf">subs</span>        <span class="no">r2</span><span class="p">,</span> <span class="no">r2</span><span class="p">,</span> <span class="mi">1</span>               <span class="err">/</span><span class="p">*</span> <span class="no">spend</span> <span class="no">time</span> <span class="no">substracting</span> <span class="no">DELAY</span> <span class="no">value</span> <span class="no">by</span> <span class="mi">1</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">bne</span>         <span class="mi">1</span><span class="no">b</span>                      <span class="err">/</span><span class="p">*</span> <span class="err">&#39;</span><span class="mi">1</span><span class="no">b</span><span class="err">&#39;</span> <span class="no">means</span> <span class="err">`</span><span class="no">look</span> <span class="no">backward</span> <span class="no">for</span> <span class="no">label</span> <span class="err">&#39;</span><span class="mi">1</span><span class="err">&#39;`</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nf">bx</span>          <span class="no">lr</span>
+</span><span class='line'>
+</span><span class='line'><span class="nl">.Lstartup:</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CR</span>             <span class="err">/</span><span class="p">*</span> <span class="no">resetting</span> <span class="no">clock</span> <span class="no">configuration</span> <span class="no">to</span> <span class="no">it</span><span class="err">&#39;</span><span class="no">s</span> <span class="no">defaults</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>                <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">HSEON</span><span class="p">,</span> <span class="no">CSSON</span><span class="p">,</span> <span class="no">PLLON</span> <span class="no">bits</span> <span class="p">-</span> <span class="no">directly</span> <span class="no">disabling</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>                                        <span class="err">/*</span> <span class="nf">HSE</span> <span class="no">oscillator</span><span class="p">,</span> <span class="no">clock</span> <span class="no">security</span> <span class="no">system</span><span class="p">,</span> <span class="no">main</span> <span class="no">PLL</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">HSION</span>               <span class="err">/</span><span class="p">*</span> <span class="no">setting</span> <span class="no">HSION</span> <span class="no">bit</span> <span class="p">-</span> <span class="no">directly</span> <span class="no">selecting</span> <span class="no">HSI</span> <span class="no">oscillator</span><span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r2</span><span class="p">,</span> <span class="err">=</span><span class="p">(</span><span class="no">HSEON</span><span class="p">)</span> <span class="err">|</span> <span class="p">(</span><span class="no">CSSON</span><span class="p">)</span> <span class="err">|</span> <span class="p">(</span><span class="no">PLLON</span><span class="p">)</span>
+</span><span class='line'>    <span class="nf">bic</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">r2</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CFGR</span>           <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">RCC_CFGR</span> <span class="p">-</span> <span class="no">clock</span> <span class="no">configuration</span> <span class="no">register</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">movw</span>        <span class="no">r1</span><span class="p">,</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CIR</span>            <span class="err">/</span><span class="p">*</span> <span class="no">disabling</span> <span class="no">all</span> <span class="no">interrupts</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_PLLCFGR</span>        <span class="err">/</span><span class="p">*</span> <span class="no">setting</span> <span class="no">the</span> <span class="no">default</span> <span class="no">value</span> <span class="no">from</span> <span class="no">datasheet</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">=</span><span class="mi">0x24003010</span>         <span class="err">/</span><span class="p">*</span> <span class="no">for</span> <span class="no">PLL</span> <span class="no">configuration</span> <span class="no">register</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">bx</span>          <span class="no">lr</span>
+</span><span class='line'>
+</span><span class='line'><span class="nl">.Linit_clock:</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CR</span>             <span class="err">/</span><span class="p">*</span> <span class="no">enabling</span> <span class="no">HSE</span> <span class="no">clock</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">bic</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">HSEBYP</span>              <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">HSEBYP</span> <span class="no">bit</span> <span class="p">-</span> <span class="no">not</span> <span class="no">bypassing</span> <span class="no">HSE</span> <span class="no">oscillator</span><span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">HSEON</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'><span class="err">1:</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>                <span class="err">/</span><span class="p">*</span> <span class="no">waiting</span> <span class="no">for</span> <span class="no">HSE</span> <span class="no">to</span> <span class="no">be</span> <span class="no">ready</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ands</span>        <span class="no">r1</span><span class="p">,</span> <span class="no">HSERDY</span>
+</span><span class='line'>    <span class="nf">beq</span>         <span class="mi">1</span><span class="no">b</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CFGR</span>           <span class="err">/</span><span class="p">*</span> <span class="no">selecting</span> <span class="no">HSE</span> <span class="no">as</span> <span class="no">the</span> <span class="no">source</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">movw</span>        <span class="no">r1</span><span class="p">,</span> <span class="no">SW0</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">eor</span>         <span class="no">r2</span><span class="p">,</span> <span class="no">r2</span>
+</span><span class='line'>    <span class="nf">movt</span>        <span class="no">r2</span><span class="p">,</span> <span class="no">HSE_STARTUP_TIMEOUT</span>
+</span><span class='line'><span class="err">1:</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>                <span class="err">/</span><span class="p">*</span> <span class="no">waiting</span> <span class="no">for</span> <span class="no">source</span> <span class="no">being</span> <span class="no">selected</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">subs</span>        <span class="no">r2</span><span class="p">,</span> <span class="mi">1</span>                   <span class="err">/</span><span class="p">*</span> <span class="no">counting</span> <span class="no">some</span> <span class="no">HSE_STARTUP_TIMEOUT</span> <span class="no">value</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">beq</span>         <span class="mi">2</span><span class="no">f</span>                      <span class="err">/</span><span class="p">*</span> <span class="no">if</span> <span class="no">HSE</span> <span class="no">doesn</span><span class="err">&#39;</span><span class="no">t</span> <span class="no">start</span> <span class="p">-</span> <span class="no">remain</span> <span class="no">with</span> <span class="no">HSI</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">and</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">RCC_CFGR_SWS</span>
+</span><span class='line'>    <span class="nf">cmp</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">SWS0</span>
+</span><span class='line'>    <span class="nf">bne</span>         <span class="mi">1</span><span class="no">b</span>
+</span><span class='line'><span class="err">2:</span>
+</span><span class='line'>    <span class="nf">bx</span>          <span class="no">lr</span>
+</span><span class='line'>    <span class="na">.size</span>       <span class="no">_reset</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">_reset</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="na">.section</span>        <span class="no">.int_vector_table</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">,</span> <span class="err">%</span><span class="no">progbits</span>
+</span><span class='line'>    <span class="na">.type</span>       <span class="no">basic_vectors</span><span class="p">,</span> <span class="err">%</span><span class="no">object</span>
+</span><span class='line'><span class="nl">basic_vectors:</span>
+</span><span class='line'>    <span class="na">.word</span>       <span class="no">_estack</span>
+</span><span class='line'>    <span class="na">.word</span>       <span class="no">_reset</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.size</span>       <span class="no">basic_vectors</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">basic_vectors</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Routines called delay and blink are similar to those in previous post. This code introduces two new routines : startup and init_clock.</p>
+
+<p>Startup initializes default clock configuration. Actually it&rsquo;s not neccesary but it is a good practice and should be done. For example: it is said that main PLLON bit reset value is 0 in stm32f4xx user manual, but on my board it is seen with the debugger that the PLLON bit is &ldquo;1&rdquo; after reset. So, the conclusion which is not new in a programming world is: not to rely on something not initialized explicitly. The startup just selects HSI as the clock source; disables HSE, PLL, clock security; resets PLL configuration to the datasheet value; disables interrupts.</p>
+
+<p>The clock_init routine enables HSE, selects it as the system clock&rsquo;s source and waits for it to be ready, but if some error occurs - it will continue with HSI clock after a little delay. Note: this is just an example and it is not neccessary to do exactly the same thing whenever HSE is selected.</p>
+
+<p>To detect the difference you may test the code without the following line:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='Gas'><span class='line'><span class="nf">bl</span>      <span class="no">.Linit_clock</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>HSI clock will be selected if init_clock is not called and the frequency will be twice higher than in the case init_clock is called. So the blinking will be also twice faster.</p>
+
+<p>Compiling the code remains yet the same as in <a href="http://denyadzi.github.io/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery/">this post</a>. Also here is the result binary for <a href="http://denyadzi.github.io/public/code/changing_clock/changing_clock.elf.bin">download</a></p>
+
+<p>Feel free to write letters for conversations.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Assembly Hello World Code for Stm32f4discovery]]></title>
@@ -192,9 +467,6 @@
 <span class='line-number'>72</span>
 <span class='line-number'>73</span>
 <span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
 </pre></td><td class='code'><pre><code class='Gas'><span class='line'>    <span class="na">.syntax</span> <span class="no">unified</span>
 </span><span class='line'>    <span class="na">.cpu</span> <span class="no">cortex-m4</span>
 </span><span class='line'>    <span class="na">.fpu</span> <span class="no">softvfp</span>
@@ -202,9 +474,6 @@
 </span><span class='line'>
 </span><span class='line'><span class="c">#define RCC_BASE        0x40023800</span>
 </span><span class='line'><span class="c">#define RCC_AHB1ENR     RCC_BASE + 0x30 </span>
-</span><span class='line'><span class="c">#define RCC_CR          RCC_BASE</span>
-</span><span class='line'><span class="c">#define RCC_PLLCFGR     RCC_BASE + 0x4</span>
-</span><span class='line'><span class="c">#define RCC_CFGR        RCC_BASE + 0x8</span>
 </span><span class='line'><span class="c">#define GPIOD_BASE      0x40020C00</span>
 </span><span class='line'><span class="c">#define GPIOD_MODER     GPIOD_BASE</span>
 </span><span class='line'><span class="c">#define GPIOD_ODR       GPIOD_BASE + 0x14</span>
@@ -254,7 +523,7 @@
 </span><span class='line'><span class="nl">.Ldelay:</span>
 </span><span class='line'>    <span class="nf">movt</span>    <span class="no">r0</span><span class="p">,</span> <span class="no">DELAY</span>           <span class="err">/</span><span class="p">*</span> <span class="no">moving</span> <span class="no">DELAY</span> <span class="no">value</span> <span class="no">into</span> <span class="no">high</span> <span class="no">halfword</span> <span class="no">of</span> <span class="no">the</span> <span class="no">register</span>  <span class="p">*</span><span class="err">/</span>
 </span><span class='line'><span class="err">1:</span>                              <span class="err">/*</span> <span class="nf">to</span> <span class="no">make</span> <span class="no">a</span> <span class="no">big</span> <span class="no">number</span> <span class="p">*</span><span class="err">/</span>
-</span><span class='line'>    <span class="nf">subs</span>    <span class="no">R0</span><span class="p">,</span> <span class="no">R0</span><span class="p">,</span> <span class="mi">1</span>           <span class="err">/</span><span class="p">*</span> <span class="no">and</span> <span class="no">just</span> <span class="no">spend</span> <span class="no">time</span> <span class="no">substracting</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">subs</span>    <span class="no">r0</span><span class="p">,</span> <span class="no">r0</span><span class="p">,</span> <span class="mi">1</span>           <span class="err">/</span><span class="p">*</span> <span class="no">and</span> <span class="no">just</span> <span class="no">spend</span> <span class="no">time</span> <span class="no">substracting</span> <span class="p">*</span><span class="err">/</span>
 </span><span class='line'>    <span class="nf">bne</span>     <span class="mi">1</span><span class="no">b</span>
 </span><span class='line'>    <span class="nf">bx</span>      <span class="no">lr</span>                  <span class="err">/</span><span class="p">*</span> <span class="no">return</span> <span class="p">*</span><span class="err">/</span>
 </span><span class='line'>

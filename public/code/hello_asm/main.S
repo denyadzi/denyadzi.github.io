@@ -5,9 +5,6 @@
 
 #define RCC_BASE        0x40023800
 #define RCC_AHB1ENR     RCC_BASE + 0x30 
-#define RCC_CR          RCC_BASE
-#define RCC_PLLCFGR     RCC_BASE + 0x4
-#define RCC_CFGR        RCC_BASE + 0x8
 #define GPIOD_BASE      0x40020C00
 #define GPIOD_MODER     GPIOD_BASE
 #define GPIOD_ODR       GPIOD_BASE + 0x14
@@ -57,7 +54,7 @@ _reset:
 .Ldelay:
     movt    r0, DELAY           /* moving DELAY value into high halfword of the register  */
 1:                              /* to make a big number */
-    subs    R0, R0, 1           /* and just spend time substracting */
+    subs    r0, r0, 1           /* and just spend time substracting */
     bne     1b
     bx      lr                  /* return */
 
