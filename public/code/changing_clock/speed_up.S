@@ -1,55 +1,8 @@
     .thumb
     .syntax     unified
     .cpu        cortex-m4
-#define RCC_BASE        0x40023800
-#define RCC_CR          RCC_BASE
-#define RCC_CFGR        RCC_BASE + 0x08
-#define RCC_PLLCFGR     RCC_BASE + 0x04
-#define RCC_AHB1ENR     RCC_BASE + 0x30
-#define RCC_APB1ENR     RCC_BASE + 0x40
-#define RCC_CIR         RCC_BASE + 0x0C
-#define PWR_BASE        0x40007000
-#define PWR_CR          PWR_BASE
-#define FLASH_BASE      0x40023C00
-#define FLASH_ACR       FLASH_BASE
-#define GPIOD_BASE      0x40020C00
-#define GPIOD_MODER     GPIOD_BASE
-#define GPIOD_ODR       GPIOD_BASE + 0x14
 
-#define GPIODEN         1 << 3
-#define MODER12_OUT     1 << 24
-#define LED_GREEN       1 << 12
-#define PLLON           1 << 24
-#define PLLRDY          1 << 25
-#define PLLSRC          1 << 22
-#define HSION           1
-#define HSEBYP          1 << 18
-#define HSEON           1 << 16
-#define HSERDY          1 << 17
-#define CSSON           1 << 19
-#define PWREN           1 << 28
-#define VOS             1 << 14
-#define SW0             1
-#define SW1             1 << 1
-#define SWS0            1 << 2
-#define SWS1            1 << 3             
-#define ICEN            1 << 9
-#define DCEN            1 << 10
-
-#define PLL_M           8
-#define PLL_N           336
-#define PLL_P           2
-#define PLL_Q           7
-#define DELAY           0x5F
-#define ACR_LATENCY_5WS 5 
-
-#define RCC_PLLCFGR_PLLP    ~(0x3 << 16)
-#define RCC_PLLCFGR_PLLM    ~0x3F
-#define RCC_PLLCFGR_PLLN    ~(0x1FF << 6)
-#define RCC_CFGR_PPRE2_DIV2 0x8000 
-#define RCC_CFGR_PPRE1_DIV4 0x1400
-#define RCC_CFGR_SW         3
-#define RCC_CFGR_SWS        3 << 2
+.include        "registers_and_bits.inc.S"
 
 .section        .text
     .type       _reset, %function
@@ -90,7 +43,7 @@ _reset:
     str         r1, [r0]
     ldr         r0, =RCC_CR             /* clearing HSEON, CSSON, PLLON bits */
     ldr         r1, [r0]
-    ldr         r2, =(HSEON) | (CSSON) | (PLLON)
+    ldr         r2, =HSEON | CSSON | PLLON
     bic         r1, r2
     str         r1, [r0]
     ldr         r0, =RCC_PLLCFGR        /* setting the default value from datasheet */
@@ -113,22 +66,23 @@ _reset:
     ldr         r1, [r0]                /* waiting for HSE to be ready */
     ands        r1, HSERDY
     beq         1b
-    ldr         r0, =RCC_APB1ENR        /* select regulator voltage scale mode 1*/
-    ldr         r1, [r0]
-    orr         r1, PWREN
+    ldr         r0, =RCC_APB1ENR        /* enable power controller and */
+    ldr         r1, [r0]                /* select regulator voltage scale mode 1*/
+    orr         r1, PWREN               /* to be able to work on 168 MHz */
     str         r1, [r0]
     ldr         r0, =PWR_CR
     ldr         r1, [r0]
     orr         r1, VOS
     str         r1, [r0]
-    ldr         r0, =RCC_CFGR
+    ldr         r0, =RCC_CFGR           /* configuring peripherals clock prescaling */
     ldr         r1, [r0]
-    orr         r1, RCC_CFGR_PPRE2_DIV2
-    orr         r1, RCC_CFGR_PPRE1_DIV4
+    bic         r1, RCC_CFGR_HPRE_DIV1  /* explicitly setting no devision for AHB */
+    orr         r1, RCC_CFGR_PPRE2_DIV2 /* 168 / 2 <= 84 MHz for high speed devices */
+    orr         r1, RCC_CFGR_PPRE1_DIV4 /* 168 / 4 <= 42 MHz for low speed devices */
     str         r1, [r0]
     ldr         r0, =RCC_PLLCFGR        /* configuring main PLL */
     ldr         r1, [r0]
-    ldr         r2, =(PLL_M | (PLL_N << 6) | (((PLL_P >> 1) - 1) << 16) | (PLLSRC) | (PLL_Q << 24))
+    ldr         r2, =PLL_M | PLL_N << 6 | ((PLL_P >> 1) - 1) << 16 | PLLSRC | PLL_Q << 24
     orr         r1, r2
     str         r1, [r0]
     ldr         r0, =RCC_CR             /* enable main PLL */
@@ -139,9 +93,9 @@ _reset:
     ldr         r1, [r0]                /* wait for PLL to be ready */
     ands        r1, PLLRDY 
     beq         1b
-    ldr         r0, =FLASH_ACR
-    ldr         r1, [r0]
-    ldr         r2, =((ICEN) | (DCEN) | (ACR_LATENCY_5WS))
+    ldr         r0, =FLASH_ACR          /* encreasing flash latency clock cycles amount */
+    ldr         r1, [r0]                /* in general this parameter depends on Vdd and system clock frequency */
+    ldr         r2, =ACR_LATENCY_5WS    /* in our case it is 6 cycles (or 5 "wait states") according to the manual */
     orr         r1, r2
     str         r1, [r0]
     ldr         r0, =RCC_CFGR           /* selecting PLL as a source */

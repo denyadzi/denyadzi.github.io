@@ -4,7 +4,7 @@
   <title><![CDATA[Blog on embedded programming]]></title>
   <link href="http://denyadzi.github.io/atom.xml" rel="self"/>
   <link href="http://denyadzi.github.io/"/>
-  <updated>2014-12-27T22:02:54+03:00</updated>
+  <updated>2014-12-29T21:46:42+03:00</updated>
   <id>http://denyadzi.github.io/</id>
   <author>
     <name><![CDATA[Dzianis Yatskevich]]></name>
@@ -12,6 +12,388 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Stm32f4 168 MHz Speedup]]></title>
+    <link href="http://denyadzi.github.io/blog/2014/12/28/stm32f4-168-mhz-speedup/"/>
+    <updated>2014-12-28T12:10:19+03:00</updated>
+    <id>http://denyadzi.github.io/blog/2014/12/28/stm32f4-168-mhz-speedup</id>
+    <content type="html"><![CDATA[<p>Hello everyone! Current post is based on <a href="http://denyadzi.github.io/blog/2014/12/27/clock-control-on-stm32f4discovery/">previous one</a>. Now, after some of new material has been read on the topic, I&rsquo;m going to switch to the recommended maximum frequency of stm32f407 system clock - 168 MHz.</p>
+
+<!--more-->
+
+
+<p>That&rsquo;s easy enough. I&rsquo;m going just modify init_clock routine from previous example by adding some configurations:</p>
+
+<ul>
+<li><em>Flash</em>: the higher the frequency the more clock cycles CPU needs to wait for flash reaction. There is a table in user manual from wich the value of this parameter can be taken. In our case it is 6 cycles or 5 so called &ldquo;wait states&rdquo;. The FLASH_ACR registry hold this parameter.</li>
+<li><em>Power controller</em>: to operate on 168 MHz the MC need voltage controller enabled and the voltage mode scale 1 to be selected. This is done on PWR_CR register.</li>
+<li>The peripherals have clock frequency limits for normal operation. For high speed devices on APB2 it is 84 MHz and for low speed on APB1 - 42 MHz. So we need to set apropriate <em>prescaling</em> factors on RCC_CFGR register. They are 168 / 84 = 2 and 168 / 42 = 4 respectively.</li>
+<li>Finally we configure, enable and select the <em>main PLL</em> as the source of a system clock. The output signal frequency of main PLL is calculated in such a way:</li>
+</ul>
+
+
+<p>fout = (fin * N / M) / P</p>
+
+<p>Where fin - is 8 MHz from HSE with external crystal,
+M - it is convenient to take the same as the fin and equal 8 in our case,
+P - takes minimum of 2
+So, N = 168 * 2 = 336
+All factors are set in RCC_PLLCFGR register.</p>
+
+<p>Please, checkout the code for details:</p>
+
+<figure class='code'><figcaption><span> (speed_up.S)</span> <a href='http://denyadzi.github.io/public/code/changing_clock/speed_up.S'>download</a></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+</pre></td><td class='code'><pre><code class='Gas'><span class='line'>    <span class="na">.thumb</span>
+</span><span class='line'>    <span class="na">.syntax</span>     <span class="no">unified</span>
+</span><span class='line'>    <span class="na">.cpu</span>        <span class="no">cortex-m4</span>
+</span><span class='line'>
+</span><span class='line'><span class="na">.include</span>        <span class="s">&quot;registers_and_bits.inc.S&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="na">.section</span>        <span class="no">.text</span>
+</span><span class='line'>    <span class="na">.type</span>       <span class="no">_reset</span><span class="p">,</span> <span class="err">%</span><span class="no">function</span>
+</span><span class='line'><span class="nl">_reset:</span>
+</span><span class='line'>    <span class="nf">bl</span>          <span class="no">.Lstartup</span>
+</span><span class='line'>    <span class="nf">bl</span>          <span class="no">.Linit_clock</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_AHB1ENR</span>        <span class="err">/</span><span class="p">*</span> <span class="no">this</span> <span class="no">register</span> <span class="no">controls</span> <span class="no">some</span> <span class="no">part</span> <span class="no">of</span> <span class="no">peripherals</span><span class="err">&#39;</span> <span class="no">clock</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">GPIODEN</span>             <span class="err">/</span><span class="p">*</span> <span class="no">enabling</span> <span class="no">GPIOD</span> <span class="no">clock</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">GPIOD_MODER</span>        <span class="err">/</span><span class="p">*</span> <span class="no">GPIOD</span> <span class="no">mode</span> <span class="no">configuration</span> <span class="no">register</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">=</span><span class="no">MODER12_OUT</span>        <span class="err">/</span><span class="p">*</span> <span class="no">set</span> <span class="mi">12</span> <span class="no">pin</span> <span class="no">of</span> <span class="no">GPIOD</span> <span class="no">as</span> <span class="no">output</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">GPIOD_ODR</span>          <span class="err">/</span><span class="p">*</span> <span class="no">port</span> <span class="no">output</span> <span class="no">register</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">eor</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">r1</span>                  <span class="err">/</span><span class="p">*</span> <span class="no">elegant</span> <span class="no">way</span> <span class="no">to</span> <span class="no">clean</span> <span class="no">register</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">eor</span>         <span class="no">r2</span> <span class="p">,</span><span class="no">r2</span>
+</span><span class='line'><span class="nl">.Lblink:</span>
+</span><span class='line'>    <span class="nf">mov</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">LED_GREEN</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>                <span class="err">/</span><span class="p">*</span> <span class="no">setting</span> <span class="no">LED_GREEN</span> <span class="no">bit</span> <span class="no">in</span> <span class="no">GPIOD_ODR</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">bl</span>          <span class="no">.Ldelay</span>                 <span class="err">/</span><span class="p">*</span> <span class="no">pause</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">eor</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">r1</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>                <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">GPIOD_ODR</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">bl</span>          <span class="no">.Ldelay</span>                 <span class="err">/</span><span class="p">*</span> <span class="no">pause</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">b</span>           <span class="no">.Lblink</span>                 <span class="err">/</span><span class="p">*</span> <span class="no">and</span> <span class="no">so</span> <span class="no">on</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'><span class="nl">.Ldelay:</span>
+</span><span class='line'>    <span class="nf">movt</span>        <span class="no">r2</span><span class="p">,</span> <span class="no">DELAY</span>
+</span><span class='line'><span class="err">1:</span>
+</span><span class='line'>    <span class="nf">subs</span>        <span class="no">r2</span><span class="p">,</span> <span class="no">r2</span><span class="p">,</span> <span class="mi">1</span>               <span class="err">/</span><span class="p">*</span> <span class="no">spend</span> <span class="no">time</span> <span class="no">substracting</span> <span class="no">DELAY</span> <span class="no">value</span> <span class="no">by</span> <span class="mi">1</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">bne</span>         <span class="mi">1</span><span class="no">b</span>                      <span class="err">/</span><span class="p">*</span> <span class="err">&#39;</span><span class="mi">1</span><span class="no">b</span><span class="err">&#39;</span> <span class="no">means</span> <span class="err">`</span><span class="no">look</span> <span class="no">backward</span> <span class="no">for</span> <span class="no">label</span> <span class="err">&#39;</span><span class="mi">1</span><span class="err">&#39;`</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nf">bx</span>          <span class="no">lr</span>
+</span><span class='line'><span class="nl">.Lstartup:</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CR</span>             <span class="err">/</span><span class="p">*</span> <span class="no">resetting</span> <span class="no">clock</span> <span class="no">configuration</span> <span class="no">to</span> <span class="no">it</span><span class="err">&#39;</span><span class="no">s</span> <span class="no">defaults</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">mov</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">HSION</span>               <span class="err">/</span><span class="p">*</span> <span class="no">setting</span> <span class="no">HSION</span> <span class="no">bit</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CFGR</span>           <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">RCC_CFGR</span> <span class="no">register</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">mov</span>         <span class="no">r1</span><span class="p">,</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CR</span>             <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">HSEON</span><span class="p">,</span> <span class="no">CSSON</span><span class="p">,</span> <span class="no">PLLON</span> <span class="no">bits</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r2</span><span class="p">,</span> <span class="err">=</span><span class="no">HSEON</span> <span class="err">|</span> <span class="no">CSSON</span> <span class="err">|</span> <span class="no">PLLON</span>
+</span><span class='line'>    <span class="nf">bic</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">r2</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_PLLCFGR</span>        <span class="err">/</span><span class="p">*</span> <span class="no">setting</span> <span class="no">the</span> <span class="no">default</span> <span class="no">value</span> <span class="no">from</span> <span class="no">datasheet</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">=</span><span class="mi">0x24003010</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CR</span>             <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">HSEBYP</span> <span class="no">bit</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">bic</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">HSEBYP</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CIR</span>            <span class="err">/</span><span class="p">*</span> <span class="no">disabling</span> <span class="no">all</span> <span class="no">interrupts</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">mov</span>         <span class="no">r1</span><span class="p">,</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">bx</span>          <span class="no">lr</span>
+</span><span class='line'><span class="nl">.Linit_clock:</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CR</span>             <span class="err">/</span><span class="p">*</span> <span class="no">enabling</span> <span class="no">HSE</span> <span class="no">clock</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">HSEON</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'><span class="err">1:</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>                <span class="err">/</span><span class="p">*</span> <span class="no">waiting</span> <span class="no">for</span> <span class="no">HSE</span> <span class="no">to</span> <span class="no">be</span> <span class="no">ready</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ands</span>        <span class="no">r1</span><span class="p">,</span> <span class="no">HSERDY</span>
+</span><span class='line'>    <span class="nf">beq</span>         <span class="mi">1</span><span class="no">b</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_APB1ENR</span>        <span class="err">/</span><span class="p">*</span> <span class="no">enable</span> <span class="no">power</span> <span class="no">controller</span> <span class="no">and</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>                <span class="err">/</span><span class="p">*</span> <span class="no">select</span> <span class="no">regulator</span> <span class="no">voltage</span> <span class="no">scale</span> <span class="no">mode</span> <span class="mi">1</span><span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">PWREN</span>               <span class="err">/</span><span class="p">*</span> <span class="no">to</span> <span class="no">be</span> <span class="no">able</span> <span class="no">to</span> <span class="no">work</span> <span class="no">on</span> <span class="mi">168</span> <span class="no">MHz</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">PWR_CR</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">VOS</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CFGR</span>           <span class="err">/</span><span class="p">*</span> <span class="no">configuring</span> <span class="no">peripherals</span> <span class="no">clock</span> <span class="no">prescaling</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">bic</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">RCC_CFGR_HPRE_DIV1</span>  <span class="err">/</span><span class="p">*</span> <span class="no">explicitly</span> <span class="no">setting</span> <span class="no">no</span> <span class="no">devision</span> <span class="no">for</span> <span class="no">AHB</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">RCC_CFGR_PPRE2_DIV2</span> <span class="err">/</span><span class="p">*</span> <span class="mi">168</span> <span class="err">/</span> <span class="mi">2</span> <span class="err">&lt;=</span> <span class="mi">84</span> <span class="no">MHz</span> <span class="no">for</span> <span class="no">high</span> <span class="no">speed</span> <span class="no">devices</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">RCC_CFGR_PPRE1_DIV4</span> <span class="err">/</span><span class="p">*</span> <span class="mi">168</span> <span class="err">/</span> <span class="mi">4</span> <span class="err">&lt;=</span> <span class="mi">42</span> <span class="no">MHz</span> <span class="no">for</span> <span class="no">low</span> <span class="no">speed</span> <span class="no">devices</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_PLLCFGR</span>        <span class="err">/</span><span class="p">*</span> <span class="no">configuring</span> <span class="no">main</span> <span class="no">PLL</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r2</span><span class="p">,</span> <span class="err">=</span><span class="no">PLL_M</span> <span class="err">|</span> <span class="no">PLL_N</span> <span class="err">&lt;&lt;</span> <span class="mi">6</span> <span class="err">|</span> <span class="p">((</span><span class="no">PLL_P</span> <span class="err">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">-</span> <span class="mi">1</span><span class="p">)</span> <span class="err">&lt;&lt;</span> <span class="mi">16</span> <span class="err">|</span> <span class="no">PLLSRC</span> <span class="err">|</span> <span class="no">PLL_Q</span> <span class="err">&lt;&lt;</span> <span class="mi">24</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">r2</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CR</span>             <span class="err">/</span><span class="p">*</span> <span class="no">enable</span> <span class="no">main</span> <span class="no">PLL</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">PLLON</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'><span class="err">1:</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>                <span class="err">/</span><span class="p">*</span> <span class="no">wait</span> <span class="no">for</span> <span class="no">PLL</span> <span class="no">to</span> <span class="no">be</span> <span class="no">ready</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ands</span>        <span class="no">r1</span><span class="p">,</span> <span class="no">PLLRDY</span>
+</span><span class='line'>    <span class="no">beq</span>         <span class="mi">1</span><span class="no">b</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">FLASH_ACR</span>          <span class="err">/</span><span class="p">*</span> <span class="no">encreasing</span> <span class="no">flash</span> <span class="no">latency</span> <span class="no">clock</span> <span class="no">cycles</span> <span class="no">amount</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>                <span class="err">/</span><span class="p">*</span> <span class="no">in</span> <span class="no">general</span> <span class="no">this</span> <span class="no">parameter</span> <span class="no">depends</span> <span class="no">on</span> <span class="no">Vdd</span> <span class="no">and</span> <span class="no">system</span> <span class="no">clock</span> <span class="no">frequency</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r2</span><span class="p">,</span> <span class="err">=</span><span class="no">ACR_LATENCY_5WS</span>    <span class="err">/</span><span class="p">*</span> <span class="no">in</span> <span class="no">our</span> <span class="no">case</span> <span class="no">it</span> <span class="no">is</span> <span class="mi">6</span> <span class="no">cycles</span> <span class="p">(</span><span class="no">or</span> <span class="mi">5</span> <span class="err">&quot;</span><span class="no">wait</span> <span class="no">states</span><span class="err">&quot;</span><span class="p">)</span> <span class="no">according</span> <span class="no">to</span> <span class="no">the</span> <span class="no">manual</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">r2</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">RCC_CFGR</span>           <span class="err">/</span><span class="p">*</span> <span class="no">selecting</span> <span class="no">PLL</span> <span class="no">as</span> <span class="no">a</span> <span class="no">source</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">SW1</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'><span class="err">1:</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">and</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">RCC_CFGR_SWS</span>
+</span><span class='line'>    <span class="nf">cmp</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">SWS1</span>
+</span><span class='line'>    <span class="no">bne</span>         <span class="mi">1</span><span class="no">b</span>
+</span><span class='line'>    <span class="nf">bx</span>          <span class="no">lr</span>
+</span><span class='line'>    <span class="na">.size</span>       <span class="no">_reset</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">_reset</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="na">.section</span>        <span class="no">.int_vector_table</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">,</span> <span class="err">%</span><span class="no">progbits</span>
+</span><span class='line'>    <span class="na">.type</span>       <span class="no">basic_vectors</span><span class="p">,</span> <span class="err">%</span><span class="no">object</span>
+</span><span class='line'><span class="nl">basic_vectors:</span>
+</span><span class='line'>    <span class="na">.word</span>       <span class="no">_estack</span>
+</span><span class='line'>    <span class="na">.word</span>       <span class="no">_reset</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.size</span>       <span class="no">basic_vectors</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">basic_vectors</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span> (registers_and_bits.inc.S)</span> <a href='http://denyadzi.github.io/public/code/changing_clock/registers_and_bits.inc.S'>download</a></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+</pre></td><td class='code'><pre><code class='Gas'><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_BASE</span><span class="p">,</span>               <span class="mi">0x40023800</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_CR</span><span class="p">,</span>                 <span class="no">RCC_BASE</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_CFGR</span><span class="p">,</span>               <span class="no">RCC_BASE</span> <span class="err">+</span> <span class="mi">0x08</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_PLLCFGR</span><span class="p">,</span>            <span class="no">RCC_BASE</span> <span class="err">+</span> <span class="mi">0x04</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_AHB1ENR</span><span class="p">,</span>            <span class="no">RCC_BASE</span> <span class="err">+</span> <span class="mi">0x30</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_APB1ENR</span><span class="p">,</span>            <span class="no">RCC_BASE</span> <span class="err">+</span> <span class="mi">0x40</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_CIR</span><span class="p">,</span>                <span class="no">RCC_BASE</span> <span class="err">+</span> <span class="mi">0x0C</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">PWR_BASE</span><span class="p">,</span>               <span class="mi">0x40007000</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">PWR_CR</span><span class="p">,</span>                 <span class="no">PWR_BASE</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">FLASH_BASE</span><span class="p">,</span>             <span class="mi">0x40023C00</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">FLASH_ACR</span><span class="p">,</span>              <span class="no">FLASH_BASE</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">GPIOD_BASE</span><span class="p">,</span>             <span class="mi">0x40020C00</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">GPIOD_MODER</span><span class="p">,</span>            <span class="no">GPIOD_BASE</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">GPIOD_ODR</span><span class="p">,</span>              <span class="no">GPIOD_BASE</span> <span class="err">+</span> <span class="mi">0x14</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">GPIODEN</span><span class="p">,</span>                <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">3</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">MODER12_OUT</span><span class="p">,</span>            <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">24</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">LED_GREEN</span><span class="p">,</span>              <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">12</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">PLLON</span><span class="p">,</span>                  <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">24</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">PLLRDY</span><span class="p">,</span>                 <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">25</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">PLLSRC</span><span class="p">,</span>                 <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">22</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">HSION</span><span class="p">,</span>                  <span class="mi">1</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">HSEBYP</span><span class="p">,</span>                 <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">18</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">HSEON</span><span class="p">,</span>                  <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">16</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">HSERDY</span><span class="p">,</span>                 <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">17</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">CSSON</span><span class="p">,</span>                  <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">19</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">PWREN</span><span class="p">,</span>                  <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">28</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">VOS</span><span class="p">,</span>                    <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">14</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">SW0</span><span class="p">,</span>                    <span class="mi">1</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">SW1</span><span class="p">,</span>                    <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">SWS0</span><span class="p">,</span>                   <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">2</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">SWS1</span><span class="p">,</span>                   <span class="mi">1</span> <span class="err">&lt;&lt;</span> <span class="mi">3</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="no">.equ</span>        <span class="no">PLL_M</span><span class="p">,</span>                  <span class="mi">8</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">PLL_N</span><span class="p">,</span>                  <span class="mi">336</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">PLL_P</span><span class="p">,</span>                  <span class="mi">2</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">PLL_Q</span><span class="p">,</span>                  <span class="mi">7</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">DELAY</span><span class="p">,</span>                  <span class="mi">0x5F</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">ACR_LATENCY_5WS</span><span class="p">,</span>        <span class="mi">5</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="no">.equ</span>        <span class="no">RCC_PLLCFGR_PLLP</span><span class="p">,</span>       <span class="err">~</span><span class="p">(</span><span class="mi">0x3</span> <span class="err">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_PLLCFGR_PLLM</span><span class="p">,</span>       <span class="err">~</span><span class="mi">0x3F</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_PLLCFGR_PLLN</span><span class="p">,</span>       <span class="err">~</span><span class="p">(</span><span class="mi">0x1FF</span> <span class="err">&lt;&lt;</span> <span class="mi">6</span><span class="p">)</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_CFGR_HPRE_DIV1</span><span class="p">,</span>     <span class="mi">0xF</span> <span class="err">&lt;&lt;</span> <span class="mi">4</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_CFGR_PPRE2_DIV2</span><span class="p">,</span>    <span class="mi">0x8000</span>
+</span><span class='line'>    <span class="no">.equ</span>        <span class="no">RCC_CFGR_PPRE1_DIV4</span><span class="p">,</span>    <span class="mi">0x1400</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_CFGR_SW</span><span class="p">,</span>            <span class="mi">3</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">RCC_CFGR_SWS</span><span class="p">,</span>           <span class="mi">3</span> <span class="err">&lt;&lt;</span> <span class="mi">2</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The executable is available to <a href="http://denyadzi.github.io/public/code/changing_clock/speed_up.elf.bin">download</a>.</p>
+
+<p>Feel free to post your questions.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Clock Control on Stm32f4discovery]]></title>
@@ -282,7 +664,7 @@
 
 <p>HSI clock will be selected if init_clock is not called and the frequency will be twice higher than in the case init_clock is called. So the blinking will be also twice faster.</p>
 
-<p>Compiling the code remains yet the same as in <a href="http://denyadzi.github.io/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery/">this post</a>. Also here is the result binary for <a href="http://denyadzi.github.io/public/code/changing_clock/changing_clock.elf.bin">download</a></p>
+<p>Compiling the code remains yet the same as in previous post. Also here is the result binary for <a href="http://denyadzi.github.io/public/code/changing_clock/changing_clock.elf.bin">download</a></p>
 
 <p>Feel free to write letters for conversations.</p>
 ]]></content>
@@ -307,7 +689,7 @@
 <!--more-->
 
 
-<p>Knowing how to work with IO port gives you already a real possibility to create a variaty of MC applications. So, lets begin.</p>
+<p>Knowing how to work with IO port gives you already a real possibility to create a variaty of MC applications. So, let&rsquo;s begin.</p>
 
 <h2>Memory layout and linker script</h2>
 
@@ -578,7 +960,7 @@
 <!--more-->
 
 
-<p>The trip to the dark side is a comparatevely low level experience. It&rsquo;s like a trip to the wild where we need to use a kind of primitive tools. I think it is the right way of learning - especially at the beginning. I mean - no IDE. Lets leave IDE for rapid development.</p>
+<p>The trip to the dark side is a comparatevely low level experience. It&rsquo;s like a trip to the wild where we need to use a kind of primitive tools. I think it is the right way of learning - especially at the beginning. I mean - no IDE. Let&rsquo;s leave IDE for rapid development.</p>
 
 <p>In this post we&rsquo;re going to install tools under gnu/linux (mb it will be possible to install them for windows too) needed to make binaries for our ARM processor, load, debug them and have fun of everything working.</p>
 
@@ -598,7 +980,7 @@
 
 <p>I preferred more universal way, though. Thanks to <a href="https://launchpad.net/~team-gcc-arm-embedded">GCC ARM Embedded Maintainers team</a> we&rsquo;ve got <a href="https://launchpad.net/gcc-arm-embedded">this pre-built toolchain</a>. We just download, unpack, add bin folder to PATH and it&rsquo;s done. The one thing to mention for 64bit OS users is that 32bit libc and libncurses are needed for this toolchain to work (see the <a href="https://launchpadlibrarian.net/192227680/readme.txt">readme.txt</a> for more detailed instructions).</p>
 
-<p>To test our toolchain lets write a little assembly code:</p>
+<p>To test our toolchain let&rsquo;s write a little assembly code:</p>
 
 <figure class='code'><figcaption><span> (test.S)</span> <a href='http://denyadzi.github.io/public/code/tools/test.S'>download</a></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
