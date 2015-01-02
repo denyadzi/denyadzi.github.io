@@ -9,7 +9,7 @@
   <meta name="author" content="Dzianis Yatskevich">
 
   
-  <meta name="description" content="Hello everyone! Current post is based on previous one. Now, after some of new material has been read on the topic, I&rsquo;m going to switch to the &hellip;">
+  <meta name="description" content="Hello everyone! Current post is based on clock control on stm32f4discovery post. Now, after some of new material has been read on the topic, I&rsquo; &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -84,15 +84,15 @@
   </header>
 
 
-<div class="entry-content"><p>Hello everyone! Current post is based on <a href="/blog/2014/12/27/clock-control-on-stm32f4discovery/">previous one</a>. Now, after some of new material has been read on the topic, I&rsquo;m going to switch to the recommended maximum frequency of stm32f407 system clock - 168 MHz.</p>
+<div class="entry-content"><p>Hello everyone! Current post is based on <a href="/blog/2014/12/27/clock-control-on-stm32f4discovery/">clock control on stm32f4discovery</a> post. Now, after some of new material has been read on the topic, I&rsquo;m going to switch to the recommended maximum frequency of stm32f407 system clock - 168 MHz.</p>
 
 <!--more-->
 
 
-<p>That&rsquo;s easy enough. I&rsquo;m going just modify init_clock routine from previous example by adding some configurations:</p>
+<p>That&rsquo;s easy enough. I&rsquo;m going just to modify the init_clock routine from previous example by adding some configuration:</p>
 
 <ul>
-<li><em>Flash</em>: the higher the frequency the more clock cycles CPU needs to wait for flash reaction. There is a table in user manual from wich the value of this parameter can be taken. In our case it is 6 cycles or 5 so called &ldquo;wait states&rdquo;. The FLASH_ACR registry hold this parameter.</li>
+<li><em>Flash</em>: the higher the frequency the more clock cycles CPU needs to wait for flash reaction. There is a table in <a href="http://www.st.com/st-web-ui/static/active/en/resource/technical/document/reference_manual/DM00031020.pdf">user manual, page 80</a> from which the value of this parameter can be taken. In our case it is 6 cycles or 5 so called &ldquo;wait states&rdquo;. The FLASH_ACR registry holds this parameter.</li>
 <li><em>Power controller</em>: to operate on 168 MHz the MC need voltage controller enabled and the voltage mode scale 1 to be selected. This is done on PWR_CR register.</li>
 <li>The peripherals have clock frequency limits for normal operation. For high speed devices on APB2 it is 84 MHz and for low speed on APB1 - 42 MHz. So we need to set apropriate <em>prescaling</em> factors on RCC_CFGR register. They are 168 / 84 = 2 and 168 / 42 = 4 respectively.</li>
 <li>Finally we configure, enable and select the <em>main PLL</em> as the source of a system clock. The output signal frequency of main PLL is calculated in such a way:</li>
@@ -102,10 +102,10 @@
 <p>fout = (fin * N / M) / P</p>
 
 <p>Where fin - is 8 MHz from HSE with external crystal,
-M - it is convenient to take the same as the fin and equal 8 in our case,
-P - takes minimum of 2
-So, N = 168 * 2 = 336
-All factors are set in RCC_PLLCFGR register.</p>
+it is convenient to take M value the same as the fin and equal 8 in our case,
+P - takes minimum of 2</p>
+
+<p>So, N = 168 * 2 = 336. All these factors are set in RCC_PLLCFGR register.</p>
 
 <p>Please, checkout the code for details:</p>
 
@@ -493,6 +493,8 @@ All factors are set in RCC_PLLCFGR register.</p>
         <a class="basic-alignment left" href="/blog/2014/12/27/clock-control-on-stm32f4discovery/" title="Previous Post: Clock control on stm32f4discovery">&laquo; Clock control on stm32f4discovery</a>
       
       
+        <a class="basic-alignment right" href="/blog/2014/12/30/triggering-external-interrupt-on-stm32f4discovery/" title="Next Post: Triggering external interrupt on stm32f4discovery">Triggering external interrupt on stm32f4discovery &raquo;</a>
+      
     </p>
   </footer>
 </article>
@@ -504,6 +506,10 @@ All factors are set in RCC_PLLCFGR register.</p>
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/12/30/triggering-external-interrupt-on-stm32f4discovery/">Triggering External Interrupt on Stm32f4discovery</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/12/28/stm32f4-168-mhz-speedup/">Stm32f4 168 MHz Speedup</a>
@@ -544,7 +550,7 @@ All factors are set in RCC_PLLCFGR register.</p>
     </div>
   </div>
   <footer role="contentinfo"><p>
-  2014 - by Dzianis Yatskevich -
+  2015 - by Dzianis Yatskevich -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 
@@ -569,6 +575,16 @@ All factors are set in RCC_PLLCFGR register.</p>
 
 
 
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-58151682-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
 
 
 </body>
