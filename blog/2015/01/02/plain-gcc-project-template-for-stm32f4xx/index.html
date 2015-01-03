@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Plain Gcc Project Workspace for Stm32f4xx - Blog on embedded programming</title>
+  <meta name="author" content="Dzianis Yatskevich">
+
+  
+  <meta name="description" content="Hello everyone! A couple new thoughts visited me recently. I have no doubt that programming in assembly is extremely useful. Struggling to make the &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://denyadzi.github.io/blog/2015/01/02/plain-gcc-project-template-for-stm32f4xx">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Blog on embedded programming" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Blog on embedded programming</a></h1>
+  
+    <h2>The trip to the dark side</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:denyadzi.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Plain Gcc Project Workspace for Stm32f4xx</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-01-02T15:46:12+03:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>2</span><span class='date-suffix'>nd</span>, <span class='date-year'>2015</span></span> <span class='time'>3:46 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Hello everyone! A couple new thoughts visited me recently. I have no doubt that programming in assembly is extremely useful.  Struggling to make the assembly code to work, solving problems gives much experience: makes to read documentation carefully and learn the architecture, trains patience, teaches not to be scared of object dumps. These are fundamental skills. Good fundamental skills are the roots of good higher level skills.</p>
+
+<!--more-->
+
+
+<p>Some routines such as startup and init_clock travel from post to post as many constants also do. So the thoughts about creating a sort of a library appear in such case. But that means going more high level. Actually it leads to C language usage.</p>
+
+<p>When looking at C function and not understanding what is it doing on actual hardware means knowing the library but not the processor under it. The opposite deal is to look at the C-function as an assebly programmer. The assembly effectively gives knowledge and C gives an opportunity to effectively use that knowlenge. So I decided to be more effective.</p>
+
+<p>On this blog each post covers some new feature of the hardware programming. Certainly each example also uses some features which were covered in previous posts like GPIO usage, clock initialization etc. and need not to have focus on them. It is much more clean and effective to use such features at higher level as they are considered to be already learned in assembly.</p>
+
+<p>So that&rsquo;s the concept: new features in this blog are going to be written in assembly and old ones - in C. I agree with the opinion that C should be used for writing applications, but with the condition of knowing the architecture and assembly language.</p>
+
+<h2>C projects workspace</h2>
+
+<p>To create C applications for stm32 we need to use ST library. The ST library is introduced just as a collection of sources and their headers splitted by functionality they implement. If we need GPIO functionality for example, we should compile our source together with the GPIO source. It is convenient to organize such manipulations using <code>make</code> utility. So, our C projects workspace is a directory tree with ST library and projects&#8217; source folder having some common for all projects files at the top level.</p>
+
+<p>The main point is to construct the Makefile. Master Google led me to <a href="http://www.wolinlabs.com/blog/linux.stm32.discovery.gcc.html">this stm32 discovery development on linux tutorial</a>. Thanks to <a href="https://github.com/rowol">Ross Wolin</a>, I&rsquo;ve took <a href="https://github.com/rowol/stm32_discovery_arm_gcc/blob/master/STM32F4-Discovery_FW_V1.1.0/Project/Demonstration/Makefile">his Makefile</a> as the base.</p>
+
+<p>Please, let me introduce <a href="https://github.com/denyadzi/stm32-wspc">the variant of the workspace for C projects</a>. Refer it&rsquo;s README to get more information. Feel free to contact me if there are any questions</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Dzianis Yatskevich</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-01-02T15:46:12+03:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>2</span><span class='date-suffix'>nd</span>, <span class='date-year'>2015</span></span> <span class='time'>3:46 pm</span></time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://denyadzi.github.io/blog/2015/01/02/plain-gcc-project-template-for-stm32f4xx/" data-via="" data-counturl="http://denyadzi.github.io/blog/2015/01/02/plain-gcc-project-template-for-stm32f4xx/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/12/30/triggering-external-interrupt-on-stm32f4discovery/" title="Previous Post: Triggering external interrupt on stm32f4discovery">&laquo; Triggering external interrupt on stm32f4discovery</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/01/02/plain-gcc-project-template-for-stm32f4xx/">Plain Gcc Project Workspace for Stm32f4xx</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/30/triggering-external-interrupt-on-stm32f4discovery/">Triggering External Interrupt on Stm32f4discovery</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/28/stm32f4-168-mhz-speedup/">Stm32f4 168 MHz Speedup</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/27/clock-control-on-stm32f4discovery/">Clock Control on Stm32f4discovery</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery/">Assembly Hello World Code for Stm32f4discovery</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>About me</h1>
+  <p>I&#8217;m Dzianis from Belarus. My leading interest lays within computer science and involves studying and practicing both high and low level technologies.</p>
+  <h1>Contacts</h1>
+  <ul>
+  If you need to contact - feel free and here are some adresses:
+  <li><a href="mailto:den.overtone@gmail.com">den.overtone@gmail.com</a></li>
+    <li><a href="https://www.facebook.com/dzianis.yadzi" target="_blank">Facebook</a></li>
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  2015 - by Dzianis Yatskevich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-58151682-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+
+</body>
+</html>

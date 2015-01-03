@@ -4,7 +4,7 @@
   <title><![CDATA[Blog on embedded programming]]></title>
   <link href="http://denyadzi.github.io/atom.xml" rel="self"/>
   <link href="http://denyadzi.github.io/"/>
-  <updated>2015-01-02T15:14:12+03:00</updated>
+  <updated>2015-01-03T12:01:00+03:00</updated>
   <id>http://denyadzi.github.io/</id>
   <author>
     <name><![CDATA[Dzianis Yatskevich]]></name>
@@ -12,6 +12,34 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Plain Gcc Project Workspace for Stm32f4xx]]></title>
+    <link href="http://denyadzi.github.io/blog/2015/01/02/plain-gcc-project-template-for-stm32f4xx/"/>
+    <updated>2015-01-02T15:46:12+03:00</updated>
+    <id>http://denyadzi.github.io/blog/2015/01/02/plain-gcc-project-template-for-stm32f4xx</id>
+    <content type="html"><![CDATA[<p>Hello everyone! A couple new thoughts visited me recently. I have no doubt that programming in assembly is extremely useful.  Struggling to make the assembly code to work, solving problems gives much experience: makes to read documentation carefully and learn the architecture, trains patience, teaches not to be scared of object dumps. These are fundamental skills. Good fundamental skills are the roots of good higher level skills.</p>
+
+<!--more-->
+
+
+<p>Some routines such as startup and init_clock travel from post to post as many constants also do. So the thoughts about creating a sort of a library appear in such case. But that means going more high level. Actually it leads to C language usage.</p>
+
+<p>When looking at C function and not understanding what is it doing on actual hardware means knowing the library but not the processor under it. The opposite deal is to look at the C-function as an assebly programmer. The assembly effectively gives knowledge and C gives an opportunity to effectively use that knowlenge. So I decided to be more effective.</p>
+
+<p>On this blog each post covers some new feature of the hardware programming. Certainly each example also uses some features which were covered in previous posts like GPIO usage, clock initialization etc. and need not to have focus on them. It is much more clean and effective to use such features at higher level as they are considered to be already learned in assembly.</p>
+
+<p>So that&rsquo;s the concept: new features in this blog are going to be written in assembly and old ones - in C. I agree with the opinion that C should be used for writing applications, but with the condition of knowing the architecture and assembly language.</p>
+
+<h2>C projects workspace</h2>
+
+<p>To create C applications for stm32 we need to use ST library. The ST library is introduced just as a collection of sources and their headers splitted by functionality they implement. If we need GPIO functionality for example, we should compile our source together with the GPIO source. It is convenient to organize such manipulations using <code>make</code> utility. So, our C projects workspace is a directory tree with ST library and projects&#8217; source folder having some common for all projects files at the top level.</p>
+
+<p>The main point is to construct the Makefile. Master Google led me to <a href="http://www.wolinlabs.com/blog/linux.stm32.discovery.gcc.html">this stm32 discovery development on linux tutorial</a>. Thanks to <a href="https://github.com/rowol">Ross Wolin</a>, I&rsquo;ve took <a href="https://github.com/rowol/stm32_discovery_arm_gcc/blob/master/STM32F4-Discovery_FW_V1.1.0/Project/Demonstration/Makefile">his Makefile</a> as the base.</p>
+
+<p>Please, let me introduce <a href="https://github.com/denyadzi/stm32-wspc">the variant of the workspace for C projects</a>. Refer it&rsquo;s README to get more information. Feel free to contact me if there are any questions</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Triggering External Interrupt on Stm32f4discovery]]></title>
