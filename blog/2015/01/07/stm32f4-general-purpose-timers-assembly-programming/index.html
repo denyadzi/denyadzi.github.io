@@ -1,0 +1,797 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Stm32f4 General Purpose Timers Assembly Programming - Blog on embedded programming</title>
+  <meta name="author" content="Dzianis Yatskevich">
+
+  
+  <meta name="description" content="Hello everyone ! This post introduces a very basic example of stm32f4 timers' usage. We&rsquo;re going to drive our four leds on stm32f4discovery &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://denyadzi.github.io/blog/2015/01/07/stm32f4-general-purpose-timers-assembly-programming">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Blog on embedded programming" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Blog on embedded programming</a></h1>
+  
+    <h2>The trip to the dark side</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:denyadzi.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Stm32f4 General Purpose Timers Assembly Programming</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-01-07T15:35:00+03:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>3:35 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Hello everyone ! This post introduces a very basic example of stm32f4 timers&#8217; usage. We&rsquo;re going to drive our four leds on stm32f4discovery with four general purpose timers TIM2..TIM 5. All of them are used as 16 bit. The task is to let timers count their own period and TIM3..TIM5 timers&#8217; periods are multiples of TIM2&rsquo;s period. To distinguish that periods of blinking are correct I&rsquo;ve chosen rather long values: 3, 6, 9 and 12 sec.</p>
+
+<!--more-->
+
+
+<p>One more feature this post is different from previous ones - it&rsquo;s code will not be 100% assembly. There is a post about <a href="/blog/2015/01/02/plain-gcc-project-template-for-stm32f4xx/">plain gcc project template for stm32f4xx</a>. So the concept is to write those things in assembly we want to focus on. You&rsquo;ll need the possibility to compile together with the ST library to get the code in this post working. For more info please refer to the link I provided above for you.</p>
+
+<p>Making stm32f4 timer to count is simple enough. Let&rsquo;s look at the main.c code first</p>
+
+<figure class='code'><figcaption><span> (main.c)</span> <a href='/public/code/tim_2_5/main.c'>download</a></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include  &quot;stm32f4_discovery.h&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">extern</span> <span class="kt">void</span> <span class="nf">tim_2_init</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'><span class="k">extern</span> <span class="kt">void</span> <span class="nf">tim_3_init</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'><span class="k">extern</span> <span class="kt">void</span> <span class="nf">tim_4_init</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'><span class="k">extern</span> <span class="kt">void</span> <span class="nf">tim_5_init</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">gpio_init</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">rcc_init</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">nvic_init</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">flash_green</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">flash_orange</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">flash_blue</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">flash_red</span> <span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/**</span>
+</span><span class='line'><span class="cm"> * Main routine</span>
+</span><span class='line'><span class="cm"> *</span>
+</span><span class='line'><span class="cm"> * It consists of init stage and an endless loop.</span>
+</span><span class='line'><span class="cm"> * Everything else is done in interrupts handlers,</span>
+</span><span class='line'><span class="cm"> * which are in assembly</span>
+</span><span class='line'><span class="cm"> * In this routine we enable peripherals&#39; clock for timers and port,</span>
+</span><span class='line'><span class="cm"> * setting up port D, globally enabling interrupts in NVIC</span>
+</span><span class='line'><span class="cm"> * and initializing each timer</span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">rcc_init</span> <span class="p">();</span>
+</span><span class='line'>    <span class="n">gpio_init</span> <span class="p">();</span>
+</span><span class='line'>    <span class="n">nvic_init</span> <span class="p">();</span>
+</span><span class='line'>    <span class="n">tim_2_init</span> <span class="p">();</span>
+</span><span class='line'>    <span class="n">tim_3_init</span> <span class="p">();</span>
+</span><span class='line'>    <span class="n">tim_4_init</span> <span class="p">();</span>
+</span><span class='line'>    <span class="n">tim_5_init</span> <span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">while</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/**</span>
+</span><span class='line'><span class="cm"> * Port D initialization</span>
+</span><span class='line'><span class="cm"> *</span>
+</span><span class='line'><span class="cm"> * Setting up pins 12-15 (with LEDS) as outputs</span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">gpio_init</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">GPIO_InitTypeDef</span> <span class="n">gpio_init</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">gpio_init</span><span class="p">.</span><span class="n">GPIO_Pin</span> <span class="o">=</span> <span class="n">GPIO_Pin_12</span> <span class="o">|</span> <span class="n">GPIO_Pin_13</span> <span class="o">|</span> <span class="n">GPIO_Pin_14</span> <span class="o">|</span> <span class="n">GPIO_Pin_15</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">gpio_init</span><span class="p">.</span><span class="n">GPIO_Mode</span> <span class="o">=</span> <span class="n">GPIO_Mode_OUT</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">gpio_init</span><span class="p">.</span><span class="n">GPIO_Speed</span> <span class="o">=</span> <span class="n">GPIO_Speed_100MHz</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">gpio_init</span><span class="p">.</span><span class="n">GPIO_OType</span> <span class="o">=</span> <span class="n">GPIO_OType_PP</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">gpio_init</span><span class="p">.</span><span class="n">GPIO_PuPd</span> <span class="o">=</span> <span class="n">GPIO_PuPd_NOPULL</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">GPIO_Init</span> <span class="p">(</span><span class="n">GPIOD</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">gpio_init</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/**</span>
+</span><span class='line'><span class="cm"> * Peripherals&#39; clocks initialization</span>
+</span><span class='line'><span class="cm"> *</span>
+</span><span class='line'><span class="cm"> * Enabling clock for timers (APB1 bus) and port D (AHB1)</span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">rcc_init</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">RCC_APB1PeriphClockCmd</span> <span class="p">(</span><span class="n">RCC_APB1Periph_TIM2</span> <span class="o">|</span> <span class="n">RCC_APB1Periph_TIM3</span> <span class="o">|</span>
+</span><span class='line'>                            <span class="n">RCC_APB1Periph_TIM4</span> <span class="o">|</span> <span class="n">RCC_APB1Periph_TIM5</span><span class="p">,</span>
+</span><span class='line'>                            <span class="n">ENABLE</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">RCC_AHB1PeriphClockCmd</span> <span class="p">(</span><span class="n">RCC_AHB1Periph_GPIOD</span><span class="p">,</span> <span class="n">ENABLE</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/**</span>
+</span><span class='line'><span class="cm"> * Interrupts global enable</span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">nvic_init</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">NVIC_EnableIRQ</span> <span class="p">(</span><span class="n">TIM2_IRQn</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">NVIC_EnableIRQ</span> <span class="p">(</span><span class="n">TIM3_IRQn</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">NVIC_EnableIRQ</span> <span class="p">(</span><span class="n">TIM4_IRQn</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">NVIC_EnableIRQ</span> <span class="p">(</span><span class="n">TIM5_IRQn</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/**</span>
+</span><span class='line'><span class="cm"> * Following routines are called from each timer interrupt</span>
+</span><span class='line'><span class="cm"> * handler</span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">flash_green</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">GPIO_ToggleBits</span> <span class="p">(</span><span class="n">GPIOD</span><span class="p">,</span> <span class="n">GPIO_Pin_12</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">flash_orange</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">GPIO_ToggleBits</span> <span class="p">(</span><span class="n">GPIOD</span><span class="p">,</span> <span class="n">GPIO_Pin_13</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">flash_blue</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">GPIO_ToggleBits</span> <span class="p">(</span><span class="n">GPIOD</span><span class="p">,</span> <span class="n">GPIO_Pin_15</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="nf">flash_red</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">GPIO_ToggleBits</span> <span class="p">(</span><span class="n">GPIOD</span><span class="p">,</span> <span class="n">GPIO_Pin_14</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Well, the most useful stuff about timers is hidden from the code above. One of the most important things to know about timers is how to determine exact time which it takes to count for one period. Let&rsquo;s do little math.</p>
+
+<p>In general to set timer counting period time we need to know the time period of a timer clock signal and to set apropriate value for timer reload register. Timer will count until that value is reached and as a result wait exactly needed time before executing the interrupt handler. Here we&rsquo;re talking about basic upcounting mode (the default one), but stm32f4 timers are rather flexible and need a bunch of posts to cover their functionality.</p>
+
+<p>Let&rsquo;s discover how the system clock frequency becomes the frequency of a timer clock signal. So we need to refer to the user manual&rsquo;s chapter on RCC and here is a figure there which will help us:</p>
+
+<p><img src="/public/images/timer_intro/stm32_clock.png"></p>
+
+<p>Timers source their clocks from &ldquo;APBx timer clocks&rdquo; point. Note the block which doubles clock&rsquo;s signal frequecy if APBx prescaler&rsquo;s factor is greater than 1. For example while we were <a href="2014-12-28-stm32f4-168-mhz-speedup">speeding up stm32f4discovery to 168MHz</a>, these prescaling factors were APB1 PRESC = 4, APB2 PRESC = 2 and AHB PRESC was 1. Timers TIM2..TIM5 are on APB1 bus. So, in that case the timers&#8217; clock frequency:</p>
+
+<p>ftim = ((168MHz / 1) / 4) * 2 = 2 * 168MHz / 4 = 168MHz / 2 = 84MHz</p>
+
+<p>Well, the good news are that timer also has a prescaler. For example let&rsquo;s assume that we need 3sec timer count period. If we&rsquo;ll set maximum reload value for 16bit: 0xFFFF or 65535. Without a prescaler on ftim frequency the maximum timer period could be reached is:</p>
+
+<p>T = (65535 + 1) / 84MHz = 0.00078 sec.</p>
+
+<p>Timer prescaler allows to divide ftim with up to 0xFFFF + 1 factor and rather long delays can be reached. So, knowing the delay value and the timer clock frequency value we still need to figure out two parameters: a preload value, a timer prescaler value. To achieve accurate delay value these parameters should be a proper combination of two whole numbers.</p>
+
+<p>To solve the problem we need to solve the following system of equations:</p>
+
+<p>delay = (Nreload + 1) / fpresc; <br>
+fpresc = ftim / (Npresc + 1).</p>
+
+<p>Next script in python shows the principle of how this could be done:</p>
+
+<figure class='code'><figcaption><span> (tim_2_5.py)</span> <a href='/public/code/tim_2_5/tim_2_5.py'>download</a></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c">#!/usr/bin/env python</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">Ftim</span> <span class="o">=</span> <span class="mf">84e6</span>
+</span><span class='line'><span class="n">delay</span> <span class="o">=</span> <span class="mi">3</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">Npresc</span> <span class="o">=</span> <span class="n">Nreload</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'><span class="n">fract</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">while</span> <span class="n">fract</span> <span class="o">&lt;&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">Npresc</span> <span class="o">&gt;</span> <span class="mh">0xffff</span><span class="p">:</span>
+</span><span class='line'>    <span class="n">Nreload</span> <span class="o">=</span> <span class="n">Nreload</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="n">Npresc</span> <span class="o">=</span> <span class="n">delay</span> <span class="o">*</span> <span class="n">Ftim</span> <span class="o">/</span> <span class="p">(</span><span class="n">Nreload</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="n">fract</span> <span class="o">=</span> <span class="n">Npresc</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">Npresc</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">print</span> <span class="s">&quot;Npresc = </span><span class="si">%d</span><span class="se">\n</span><span class="s">Nreload = </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">Npresc</span><span class="p">,</span> <span class="n">Nreload</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Well, in this post I initialize all four TIM2..TIM5 timers to count 3, 6, 9 and 12 seconds respectively and toggle LEDs.</p>
+
+<p>Here is the code in assembly which does that thing. I simplified code as all the initialization are the same between TIM2..TIM5 timers:</p>
+
+<figure class='code'><figcaption><span> (tim_stripped.S)</span> <a href='/public/code/tim_2_5/tim_stripped.S'>download</a></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+<span class='line-number'>131</span>
+<span class='line-number'>132</span>
+<span class='line-number'>133</span>
+<span class='line-number'>134</span>
+<span class='line-number'>135</span>
+<span class='line-number'>136</span>
+<span class='line-number'>137</span>
+<span class='line-number'>138</span>
+<span class='line-number'>139</span>
+<span class='line-number'>140</span>
+<span class='line-number'>141</span>
+</pre></td><td class='code'><pre><code class='gas'><span class='line'>    <span class="na">.thumb</span>
+</span><span class='line'>    <span class="na">.cpu</span>        <span class="no">cortex-m4</span>
+</span><span class='line'>    <span class="na">.syntax</span>     <span class="no">unified</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">TIM2_BASE</span><span class="p">,</span> <span class="mi">0x40000000</span>
+</span><span class='line'>    <span class="no">.equ</span>        <span class="no">TIM2_ARR</span><span class="p">,</span>  <span class="no">TIM2_BASE</span> <span class="err">+</span> <span class="mi">0x2C</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">TIM2_CR1</span><span class="p">,</span>  <span class="no">TIM2_BASE</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">TIM2_DIER</span><span class="p">,</span> <span class="no">TIM2_BASE</span> <span class="err">+</span> <span class="mi">0x0C</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">TIM2_PSC</span><span class="p">,</span>  <span class="no">TIM2_BASE</span> <span class="err">+</span> <span class="mi">0x28</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">TIM2_SR</span><span class="p">,</span>   <span class="no">TIM2_BASE</span> <span class="err">+</span> <span class="mi">0x10</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">TIM2_EGR</span><span class="p">,</span>  <span class="no">TIM2_BASE</span> <span class="err">+</span> <span class="mi">0x14</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="err">/*</span>
+</span><span class='line'>    <span class="err">----------</span> <span class="nf">TIM3..TIM5------------------</span>
+</span><span class='line'>    <span class="err">*/</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">CEN</span><span class="p">,</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">UIE</span><span class="p">,</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">UIF</span><span class="p">,</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="na">.equ</span>        <span class="no">UG</span><span class="p">,</span>  <span class="mi">1</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.globl</span>      <span class="no">tim_2_init</span>
+</span><span class='line'>    <span class="na">.globl</span>      <span class="no">TIM2_IRQHandler</span>
+</span><span class='line'>    <span class="na">.globl</span>      <span class="no">tim_3_init</span>
+</span><span class='line'>    <span class="na">.globl</span>      <span class="no">TIM3_IRQHandler</span>
+</span><span class='line'>    <span class="na">.globl</span>      <span class="no">tim_4_init</span>
+</span><span class='line'>    <span class="na">.globl</span>      <span class="no">TIM4_IRQHandler</span>
+</span><span class='line'>    <span class="na">.globl</span>      <span class="no">tim_5_init</span>
+</span><span class='line'>    <span class="na">.globl</span>      <span class="no">TIM5_IRQHandler</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="na">.section</span>        <span class="no">.text</span>
+</span><span class='line'>    <span class="na">.type</span>       <span class="no">tim_2_init</span><span class="p">,</span> <span class="err">%</span><span class="no">function</span>
+</span><span class='line'><span class="nl">tim_2_init:</span>
+</span><span class='line'>    <span class="nf">push</span>        <span class="err">{</span><span class="no">r0</span><span class="p">,</span> <span class="no">r1</span><span class="err">}</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">TIM2_ARR</span>               <span class="err">/</span><span class="p">*</span> <span class="no">preloading</span> <span class="no">count</span> <span class="no">value</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">movw</span>        <span class="no">r1</span><span class="p">,</span> <span class="mi">3999</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">TIM2_DIER</span>              <span class="err">/</span><span class="p">*</span> <span class="no">enabling</span> <span class="no">update</span> <span class="no">interrupt</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">UIE</span>
+</span><span class='line'>    <span class="no">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">TIM2_PSC</span>               <span class="err">/</span><span class="p">*</span> <span class="no">setting</span> <span class="no">timer</span> <span class="no">clock</span> <span class="no">prescaler</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">movw</span>        <span class="no">r1</span><span class="p">,</span> <span class="mi">62999</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">TIM2_EGR</span>               <span class="err">/</span><span class="p">*</span> <span class="no">update</span> <span class="no">event</span> <span class="no">to</span> <span class="no">apply</span> <span class="no">prescaler</span><span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">UG</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">TIM2_CR1</span>               <span class="err">/</span><span class="p">*</span> <span class="no">enabling</span> <span class="no">counter</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">orr</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">CEN</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nf">pop</span>         <span class="err">{</span><span class="no">r0</span><span class="p">,</span> <span class="no">r1</span><span class="err">}</span>
+</span><span class='line'>    <span class="nf">bx</span>          <span class="no">lr</span>
+</span><span class='line'>    <span class="na">.size</span>       <span class="no">tim_2_init</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">tim_2_init</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.type</span>       <span class="no">TIM2_IRQHandler</span><span class="p">,</span> <span class="err">%</span><span class="no">function</span>
+</span><span class='line'><span class="nl">TIM2_IRQHandler:</span>
+</span><span class='line'>    <span class="nf">push</span>        <span class="err">{</span><span class="no">r0</span><span class="p">,</span> <span class="no">r1</span><span class="p">,</span> <span class="no">lr</span><span class="err">}</span>
+</span><span class='line'>    <span class="nf">bl</span>          <span class="no">flash_green</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">TIM2_SR</span>                <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">interrupt</span> <span class="no">flag</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">bic</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">UIF</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nf">pop</span>         <span class="err">{</span><span class="no">r0</span><span class="p">,</span> <span class="no">r1</span><span class="p">,</span> <span class="no">lr</span><span class="err">}</span>
+</span><span class='line'>    <span class="nf">bx</span>          <span class="no">lr</span>
+</span><span class='line'>    <span class="na">.size</span>       <span class="no">TIM2_IRQHandler</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">TIM2_IRQHandler</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.type</span>       <span class="no">tim_3_init</span><span class="p">,</span> <span class="err">%</span><span class="no">function</span>
+</span><span class='line'><span class="nl">tim_3_init:</span>
+</span><span class='line'>    <span class="err">/*</span>
+</span><span class='line'>    <span class="err">---------</span><span class="nf">TIM3</span>
+</span><span class='line'>    <span class="err">*/</span>
+</span><span class='line'>    <span class="na">.size</span>       <span class="no">tim_3_init</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">tim_3_init</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.type</span>       <span class="no">TIM3_IRQHandler</span><span class="p">,</span> <span class="err">%</span><span class="no">function</span>
+</span><span class='line'><span class="nl">TIM3_IRQHandler:</span>
+</span><span class='line'>    <span class="nf">push</span>        <span class="err">{</span><span class="no">r0</span><span class="p">,</span> <span class="no">r1</span><span class="p">,</span> <span class="no">lr</span><span class="err">}</span>
+</span><span class='line'>    <span class="nf">bl</span>          <span class="no">flash_orange</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">TIM3_SR</span>                <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">interrupt</span> <span class="no">flag</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">bic</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">UIF</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nf">pop</span>         <span class="err">{</span><span class="no">r0</span><span class="p">,</span> <span class="no">r1</span><span class="p">,</span> <span class="no">lr</span><span class="err">}</span>
+</span><span class='line'>    <span class="nf">bx</span>          <span class="no">lr</span>
+</span><span class='line'>    <span class="na">.size</span>       <span class="no">TIM3_IRQHandler</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">TIM3_IRQHandler</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.type</span>       <span class="no">tim_4_init</span><span class="p">,</span> <span class="err">%</span><span class="no">function</span>
+</span><span class='line'><span class="nl">tim_4_init:</span>
+</span><span class='line'>    <span class="err">/*</span>
+</span><span class='line'>    <span class="err">------------</span> <span class="nf">TIM4--------------------</span>
+</span><span class='line'>    <span class="err">*/</span>
+</span><span class='line'>    <span class="na">.size</span>       <span class="no">tim_3_init</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">tim_3_init</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.type</span>       <span class="no">TIM4_IRQHandler</span><span class="p">,</span> <span class="err">%</span><span class="no">function</span>
+</span><span class='line'><span class="nl">TIM4_IRQHandler:</span>
+</span><span class='line'>    <span class="nf">push</span>        <span class="err">{</span><span class="no">r0</span><span class="p">,</span> <span class="no">r1</span><span class="p">,</span> <span class="no">lr</span><span class="err">}</span>
+</span><span class='line'>    <span class="nf">bl</span>          <span class="no">flash_red</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">TIM4_SR</span>                <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">interrupt</span> <span class="no">flag</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">bic</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">UIF</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nf">pop</span>         <span class="err">{</span><span class="no">r0</span><span class="p">,</span> <span class="no">r1</span><span class="p">,</span> <span class="no">lr</span><span class="err">}</span>
+</span><span class='line'>    <span class="nf">bx</span>          <span class="no">lr</span>
+</span><span class='line'>    <span class="na">.size</span>       <span class="no">TIM4_IRQHandler</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">TIM4_IRQHandler</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.type</span>       <span class="no">tim_5_init</span><span class="p">,</span> <span class="err">%</span><span class="no">function</span>
+</span><span class='line'><span class="nl">tim_5_init:</span>
+</span><span class='line'>    <span class="err">/*</span>
+</span><span class='line'>    <span class="err">--------</span> <span class="nf">TIM5</span> <span class="p">-------------------</span>
+</span><span class='line'>    <span class="err">*/</span>
+</span><span class='line'>    <span class="na">.size</span>       <span class="no">tim_5_init</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">tim_5_init</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="na">.type</span>       <span class="no">TIM5_IRQHandler</span><span class="p">,</span> <span class="err">%</span><span class="no">function</span>
+</span><span class='line'><span class="nl">TIM5_IRQHandler:</span>
+</span><span class='line'>    <span class="nf">push</span>        <span class="err">{</span><span class="no">r0</span><span class="p">,</span> <span class="no">r1</span><span class="p">,</span> <span class="no">lr</span><span class="err">}</span>
+</span><span class='line'>    <span class="nf">bl</span>          <span class="no">flash_blue</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r0</span><span class="p">,</span> <span class="err">=</span><span class="no">TIM5_SR</span>                <span class="err">/</span><span class="p">*</span> <span class="no">clearing</span> <span class="no">interrupt</span> <span class="no">flag</span> <span class="p">*</span><span class="err">/</span>
+</span><span class='line'>    <span class="nf">ldr</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">bic</span>         <span class="no">r1</span><span class="p">,</span> <span class="no">UIF</span>
+</span><span class='line'>    <span class="nf">str</span>         <span class="no">r1</span><span class="p">,</span> <span class="err">[</span><span class="no">r0</span><span class="err">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nf">pop</span>         <span class="err">{</span><span class="no">r0</span><span class="p">,</span> <span class="no">r1</span><span class="p">,</span> <span class="no">lr</span><span class="err">}</span>
+</span><span class='line'>    <span class="nf">bx</span>          <span class="no">lr</span>
+</span><span class='line'>    <span class="na">.size</span>       <span class="no">TIM5_IRQHandler</span><span class="p">,</span> <span class="p">.</span> <span class="p">-</span> <span class="no">TIM5_IRQHandler</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The original source can be downloaded <a href="/public/code/tim_2_5/tim.S">here</a>.</p>
+
+<p>If we were coding in plain assembly then we would give our own names to interrupt handlers. But in our gcc examples handlers are already declared in stm32f4xx_startup.S file. This file is located under STM32F4-Discovery_FW_V1.1.0/Libraries/CMSIS/ST/STM32F4xx/Source/Templates/TrueSTUDIO path in library version I have.</p>
+
+<p>There is one more thing still remaining behind the scenes. The default system_stm32fxx.c file is configured for 25 MHz crystal for some reason - the value of a PLL_M constant is 25. It&rsquo;s located under path STM32F4-Discovery_FW_V1.1.0/Libraries/CMSIS/ST/STM32F4xx/Source/Templates. If we don&rsquo;t care about system clock frequency in our project - it&rsquo;s OK. But if we do care like in the current case we need to change it.</p>
+
+<p>In our <a href="/blog/2015/01/02/plain-gcc-project-template-for-stm32f4xx/">gcc project workspace for stm32f4xx programming</a> there is an option to use project&rsquo;s own system_stm32f4xx.c file. Please refer to that post for details. To clear out the meaning of PLL_M value I recommend to read the post about <a href="/blog/2014/12/28/stm32f4-168-mhz-speedup/">stm32f4xx 168 MHz speed up</a>. Here are my <a href="/public/code/tim_2_5/Makefile">Makefile</a> and <a href="/public/code/tim_2_5/system_stm32f4xx.c">system_stm32f4xx.c</a> files for reference.</p>
+
+<p>As we have 8 MHz crystal on board of stm32f4discovery, if PLL_M = 8 then the system clock is 168 MHz and the timer clock is 84 MHz and all the above calculations will give you accurate timer control. If something remains unclear on topic, don&rsquo;t hesitate to ask questions. The binary for this post is available for <a href="/public/code/tim_2_5/tim_2_upcount.bin">download</a>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Dzianis Yatskevich</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-01-07T15:35:00+03:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>3:35 pm</span></time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://denyadzi.github.io/blog/2015/01/07/stm32f4-general-purpose-timers-assembly-programming/" data-via="" data-counturl="http://denyadzi.github.io/blog/2015/01/07/stm32f4-general-purpose-timers-assembly-programming/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/01/02/plain-gcc-project-template-for-stm32f4xx/" title="Previous Post: Plain gcc project workspace for stm32f4xx">&laquo; Plain gcc project workspace for stm32f4xx</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/01/07/stm32f4-general-purpose-timers-assembly-programming/">Stm32f4 General Purpose Timers Assembly Programming</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/02/plain-gcc-project-template-for-stm32f4xx/">Plain Gcc Project Workspace for Stm32f4xx</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/30/triggering-external-interrupt-on-stm32f4discovery/">Triggering External Interrupt on Stm32f4discovery</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/28/stm32f4-168-mhz-speedup/">Stm32f4 168 MHz Speedup</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/27/clock-control-on-stm32f4discovery/">Clock Control on Stm32f4discovery</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>About me</h1>
+  <p>I&#8217;m Dzianis from Belarus. My leading interest lays within computer science and involves studying and practicing both high and low level technologies.</p>
+  <h1>Contacts</h1>
+  <ul>
+  If you need to contact - feel free and here are some adresses:
+  <li><a href="mailto:den.overtone@gmail.com">den.overtone@gmail.com</a></li>
+    <li><a href="https://www.facebook.com/dzianis.yadzi" target="_blank">Facebook</a></li>
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  2015 - by Dzianis Yatskevich -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-58151682-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+
+</body>
+</html>

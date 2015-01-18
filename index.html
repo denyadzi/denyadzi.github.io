@@ -9,7 +9,7 @@
   <meta name="author" content="Dzianis Yatskevich">
 
   
-  <meta name="description" content="Hello everyone! A couple new thoughts visited me recently. I have no doubt that programming in assembly is extremely useful. Struggling to make the &hellip;">
+  <meta name="description" content="Hello everyone ! This post introduces a very basic example of stm32f4 timers' usage. We&rsquo;re going to drive our four leds on stm32f4discovery &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -65,6 +65,40 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/07/stm32f4-general-purpose-timers-assembly-programming/">Stm32f4 General Purpose Timers Assembly Programming</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-01-07T15:35:00+03:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>3:35 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Hello everyone ! This post introduces a very basic example of stm32f4 timers&#8217; usage. We&rsquo;re going to drive our four leds on stm32f4discovery with four general purpose timers TIM2..TIM 5. All of them are used as 16 bit. The task is to let timers count their own period and TIM3..TIM5 timers&#8217; periods are multiples of TIM2&rsquo;s period. To distinguish that periods of blinking are correct I&rsquo;ve chosen rather long values: 3, 6, 9 and 12 sec.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/01/07/stm32f4-general-purpose-timers-assembly-programming/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -294,6 +328,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/01/07/stm32f4-general-purpose-timers-assembly-programming/">Stm32f4 General Purpose Timers Assembly Programming</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/01/02/plain-gcc-project-template-for-stm32f4xx/">Plain Gcc Project Workspace for Stm32f4xx</a>
       </li>
     
@@ -307,10 +345,6 @@
     
       <li class="post">
         <a href="/blog/2014/12/27/clock-control-on-stm32f4discovery/">Clock Control on Stm32f4discovery</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/25/assembly-hello-world-code-for-stm32f4discovery/">Assembly Hello World Code for Stm32f4discovery</a>
       </li>
     
   </ul>
